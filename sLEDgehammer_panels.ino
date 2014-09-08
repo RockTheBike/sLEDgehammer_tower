@@ -148,7 +148,6 @@ float voltish = 0; // this is where we store the adjusted voltage
 int timeSinceVoltageBeganFalling = 0;
 // var for looping through arrays
 int i = 0;
-int boxNumber; // short pin A5 to ground on boxNumber 1
 
 void setup() {
   Serial.begin(BAUD_RATE);
@@ -157,10 +156,6 @@ void setup() {
 
   pinMode(RELAYPIN, OUTPUT);
   digitalWrite(RELAYPIN,LOW);
-
-  boxNumber = 1;  // box 1 if pin A5 is shorted to ground
-  digitalWrite(A5,HIGH);  // enable pull-up resistor on A5
-  if (digitalRead(A5)) boxNumber = 2; // if A5 is not shorted to ground
 
   // init LED pins
   for(i = 0; i < NUM_LEDS; i++) {
