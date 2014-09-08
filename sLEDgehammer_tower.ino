@@ -26,7 +26,7 @@
  * 2.4 - JS => rip out a bunch of stuff that we haven't used in a long time
  * 2.5 - JS => create branch sledge for ten-line sLEDgehammer pedalpower lightshow reactor
 */
-char versionStr[] = "Split-Rail 48 volt 4-line pedalometer Pedal Power Utility Box ver. 2.5 branch:sledge";
+char versionStr[] = "sLEDgehammer Tower ver. 2.5 branch:master";
 
 // PINS
 #define RELAYPIN 2 // relay cutoff output pin // NEVER USE 13 FOR A RELAY
