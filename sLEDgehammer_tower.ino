@@ -52,7 +52,7 @@ int knobAdc = 0;
 void doKnob(){ // look in calcWatts() to see if this is commented out
   knobAdc = 1013 - analogRead(KNOBPIN); // clockwise 50K knob wired on two-conductor cable to 50K resistor
   if (knobAdc < 0) knobAdc = 0; // values 0-10 count as zero
-  knobAdc *= 2; // 50K knob wired on two-conductor cable to 50K resistor
+  // knobAdc *= 2; // 50K knob wired on two-conductor cable to 50K resistor
 }
 
 int analogState[NUM_LEDS] = {0}; // stores the last analogWrite() value for each LED
