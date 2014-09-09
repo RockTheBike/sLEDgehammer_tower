@@ -32,14 +32,13 @@ char versionStr[] = "sLEDgehammer Panels ver. 2.5 branch:panels";
 #define RELAYPIN 2 // relay cutoff output pin // NEVER USE 13 FOR A RELAY
 #define VOLTPIN A0 // Voltage Sensor Pin
 #define AMPSPIN A3 // Current Sensor Pin
-#define NUM_LEDS 10 // Number of LED outputs.
+#define NUM_LEDS 4 // Number of LED outputs.
 const int ledPins[NUM_LEDS] = {
-  3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+  3, 9, 10, 11};
 
 // levels at which each LED turns on (not including special states)
 const float ledLevels[NUM_LEDS+1] = {
-  14, 16, 18, 19, 20, 21, 22, 22.5, 23.25, 24, 0 }; // last value unused in sledge
-//  24.0, 32.0, 40.0, 48.0, 50.0};
+  21, 22, 23, 24, 0 }; // last value unused in sledge
 
 #define BRIGHTNESSVOLTAGE 24.0  // voltage at which LED brightness starts to fold back
 #define BRIGHTNESSBASE 255  // maximum brightness value (255 is max value here)
@@ -166,8 +165,6 @@ void setup() {
   timeDisplay = millis();
   timeArbduinoTurnedOn = timeDisplay;
   vRTime = timeDisplay; // initialize vRTime since it's a once-per-second thing
-//  setPwmFrequency(3,1); // this sets the frequency of PWM on pins 3 and 11 to 31,250 Hz
-//  setPwmFrequency(9,1); // this sets the frequency of PWM on pins 9 and 10 to 31,250 Hz
   //  pinMode(9,OUTPUT); // this pin will control the transistors of the huge BUCK converter
 }
 
@@ -288,7 +285,7 @@ if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY m
     }
  // }
 
-  if (presentLevel < 9) { // voltish < ledLevels[NUM_LEDS-1]){
+  if (presentLevel < 3) { // voltish < ledLevels[NUM_LEDS-1]){
       topLevelTime = time; // reset timer unless you're at top level
 }
 
@@ -297,7 +294,7 @@ if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY m
  //   if (DEBUG) Serial.println(volts);
 };*/
 
-  if ((situation == PLAYING) && (time - topLevelTime > WINTIME) && (presentLevel == 9)) { // it's been WINTIME milliseconds of solid top-level action!
+  if ((situation == PLAYING) && (time - topLevelTime > WINTIME) && (presentLevel == 3)) { // it's been WINTIME milliseconds of solid top-level action!
 
     if (situation != VICTORY) {
       victoryTime = time; // record the start time of victory
@@ -442,7 +439,7 @@ void doLeds(){
   }
 
   // turn off first x levels if voltage is above 3rd level
-  if(voltish > ledLevels[1]){
+  // if(voltish > ledLevels[1]){
     // ledState[0] = STATE_OFF;
 //    ledState[1] = STATE_OFF;
   }
@@ -466,7 +463,7 @@ void doLeds(){
     for (i = 0; i < NUM_LEDS - 1; i++) {
       ledState[i]=STATE_OFF; // turn them all off but the top one, which helps keep it from suddenly feeling easy.
     }
-    ledState[((time - victoryTime) % 1000) / 100]=STATE_ON; // turn on one at a time, bottom to top, 0.1 seconds each
+    ledState[((time - victoryTime) % 1000) / 250]=STATE_ON; // turn on one at a time, bottom to top, 0.1 seconds each
     } else { // 1st victory sequence is over
 
 
@@ -486,12 +483,8 @@ void doLeds(){
 
     if (situation == FAILING){
 
-        for (i = 0; i < NUM_LEDS; i++) {
-          if (i > 6) {  // WHICH LEVELS ARE ON DURING FAILING / DRAINING
-            ledState[i]=STATE_ON;
-          } else {
-            ledState[i]=STATE_OFF;
-          }
+        for (i = 0; i < NUM_LEDS; i++) {  // ALL LEVELS ARE ON DURING FAILING / DRAINING
+          ledState[i]=STATE_ON;
         }
     //      if (DEBUG) Serial.print("VICTORY OVER, FAILING, volts = ");
     //  if (DEBUG) Serial.println(volts);
