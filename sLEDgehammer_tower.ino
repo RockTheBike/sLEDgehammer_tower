@@ -32,13 +32,13 @@ char versionStr[] = "sLEDgehammer Panels ver. 2.5 branch:panels";
 #define RELAYPIN 2 // relay cutoff output pin // NEVER USE 13 FOR A RELAY
 #define VOLTPIN A0 // Voltage Sensor Pin
 #define AMPSPIN A3 // Current Sensor Pin
-#define NUM_LEDS 4 // Number of LED outputs.
+#define NUM_LEDS 5 // Number of LED outputs.
 const int ledPins[NUM_LEDS] = {
-  3, 9, 10, 11};
+  3, 4, 5, 6, 7};
 
 // levels at which each LED turns on (not including special states)
 const float ledLevels[NUM_LEDS+1] = {
-  21, 22, 23, 24, 0 }; // last value unused in sledge
+  22, 23, 24, 25, 26, 0 }; // last value unused in sledge
 
 #define BRIGHTNESSVOLTAGE 24.0  // voltage at which LED brightness starts to fold back
 #define BRIGHTNESSBASE 255  // maximum brightness value (255 is max value here)
@@ -74,11 +74,11 @@ int analogState[NUM_LEDS] = {0}; // stores the last analogWrite() value for each
 int ledState[NUM_LEDS] = {
   STATE_OFF};
 
-#define MAX_VOLTS 27.0  //
-#define RECOVERY_VOLTS 25.0
+#define MAX_VOLTS 40.0  //
+#define RECOVERY_VOLTS 36.0
 int relayState = STATE_OFF;
 
-#define DANGER_VOLTS 27.5
+#define DANGER_VOLTS 41.5
 int dangerState = STATE_OFF;
 
 int blinkState = 0;
@@ -285,7 +285,7 @@ if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY m
     }
  // }
 
-  if (presentLevel < 3) { // voltish < ledLevels[NUM_LEDS-1]){
+  if (presentLevel < 4) { // voltish < ledLevels[NUM_LEDS-1]){
       topLevelTime = time; // reset timer unless you're at top level
 }
 
@@ -294,7 +294,7 @@ if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY m
  //   if (DEBUG) Serial.println(volts);
 };*/
 
-  if ((situation == PLAYING) && (time - topLevelTime > WINTIME) && (presentLevel == 3)) { // it's been WINTIME milliseconds of solid top-level action!
+  if ((situation == PLAYING) && (time - topLevelTime > WINTIME) && (presentLevel == 4)) { // it's been WINTIME milliseconds of solid top-level action!
 
     if (situation != VICTORY) {
       victoryTime = time; // record the start time of victory
