@@ -38,9 +38,9 @@ const int ledPins[NUM_LEDS] = {
 
 // levels at which each LED turns on (not including special states)
 const float ledLevels[NUM_LEDS+1] = {
-  22, 23, 24, 25, 26, 0 }; // last value unused in sledge
+  22, 24, 25, 26, 27, 0 }; // last value unused in sledge
 
-#define BRIGHTNESSVOLTAGE 24.0  // voltage at which LED brightness starts to fold back
+#define BRIGHTNESSVOLTAGE 27.0  // voltage at which LED brightness starts to fold back
 #define BRIGHTNESSBASE 255  // maximum brightness value (255 is max value here)
 int brightness = 0;  // analogWrite brightness value, updated by getVoltageAndBrightness()
 #define BRIGHTNESSFACTOR (BRIGHTNESSBASE / BRIGHTNESSVOLTAGE) / 2 // results in half PWM at double voltage
