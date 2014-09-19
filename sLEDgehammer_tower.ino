@@ -174,6 +174,14 @@ void setup() {
 //  setPwmFrequency(3,1); // this sets the frequency of PWM on pins 3 and 11 to 31,250 Hz
 //  setPwmFrequency(9,1); // this sets the frequency of PWM on pins 9 and 10 to 31,250 Hz
   //  pinMode(9,OUTPUT); // this pin will control the transistors of the huge BUCK converter
+/*  int y = 0;
+  while (true) {
+    digitalWrite(ledPins[y],HIGH);
+    delay(1000);
+    digitalWrite(ledPins[y],LOW);
+    y += 1;
+    if (y == NUM_LEDS) y = 0;
+  }  */
 }
 
 void loop() {
