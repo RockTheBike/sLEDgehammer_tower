@@ -75,11 +75,11 @@ int analogState[NUM_LEDS] = {0}; // stores the last analogWrite() value for each
 int ledState[NUM_LEDS] = {
   STATE_OFF};
 
-#define MAX_VOLTS 25.5  //
-#define RECOVERY_VOLTS 24.0
+#define MAX_VOLTS 27  //
+#define RECOVERY_VOLTS 25.0
 int relayState = STATE_OFF;
 
-#define DANGER_VOLTS 26.0
+#define DANGER_VOLTS 28.0
 int dangerState = STATE_OFF;
 
 int blinkState = 0;
