@@ -633,7 +633,7 @@ void turnThemOffOneAtATime(){
         //Go into party mode
   for (i = 0; i < NUM_LEDS; i++) digitalWrite(ledPins[i], HIGH); // turn on all levels
   delay(500);
-  for (i = NUM_LEDS - 2; i >= 0; i--) { // leave the top halogen level ON
+  for (i = NUM_LEDS - 3; i >= 0; i--) { // leave the top TWO halogen levels ON = NUM_LEDS - 3
   delay(300);
     digitalWrite(ledPins[i], LOW); // turn them off one at a time
     if (DEBUG) Serial.print(i);
