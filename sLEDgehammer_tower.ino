@@ -50,9 +50,8 @@ int brightness = 0;  // analogWrite brightness value, updated by getVoltageAndBr
 #define KNOBPIN A4
 int knobAdc = 0;
 void doKnob(){ // look in calcWatts() to see if this is commented out
-  knobAdc = 1013 - analogRead(KNOBPIN); // clockwise 50K knob wired on two-conductor cable to 50K resistor
+  knobAdc = 1013 - analogRead(KNOBPIN); // 50K knob wired normal on 3-conductor cable (ccw=easy cw=hard)
   if (knobAdc < 0) knobAdc = 0; // values 0-10 count as zero
-  // knobAdc *= 2; // 50K knob wired on two-conductor cable to 50K resistor
 }
 
 int analogState[NUM_LEDS] = {0}; // stores the last analogWrite() value for each LED
