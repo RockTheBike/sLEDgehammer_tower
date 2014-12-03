@@ -324,7 +324,7 @@ if (situation=IDLING && (volts - voltRecord[(vRIndex-2)] > 0.2)){ //JAKE why did
 
 }
 
-   if (timeSinceVoltageBeganFalling > 15 && volts>13.5 && situation != FAILING){
+   if (timeSinceVoltageBeganFalling > 15 && volts>13.5 && situation != FAILING && situation != VICTORY){
               Serial.println("Got to Failing. Voltage has been falling for 15 seconds. ");
 
            situation=FAILING;
@@ -411,7 +411,7 @@ void clearlyWinning() { // adjusts voltishFactor according to whether we're clea
     if (voltishFactor  < 1.5) voltishFactor  += 0.1; // increase our fakery
     clearlyLosingTime = time; // reset the timer since we made the adjustment
   }
-  if (situation == FAILING) voltishFactor  = 1.0; // reset voltishFactor  since we've failed
+  if (situation == FAILING || situation == IDLING) voltishFactor  = 1.0; // reset voltishFactor  since we've failed
   voltish = (volts * voltishFactor); // calculate the adjusted voltage
 }
 
@@ -548,22 +548,29 @@ void doLeds(){
      // if (DEBUG) Serial.println(volts);
 
   if (time - victoryTime <= 3000){
-    for (i = 0; i < NUM_LEDS - 1; i++) {
-      ledState[i]=STATE_OFF; // turn them all off but the top one, which helps keep it from suddenly feeling easy.
+    for (i = 0; i < NUM_LEDS - 2; i++) {
+      ledState[i]=STATE_OFF; // turn them all off but the top TWO, which helps keep it from suddenly feeling easy.
     }
     ledState[((time - victoryTime) % 1000) / 100]=STATE_ON; // turn on one at a time, bottom to top, 0.1 seconds each
-    } else { // 1st victory sequence is over
+    } else if (time - victoryTime <= 4000){ // 1st victory sequence is over
 
 
     turnThemOffOneAtATime();
     //delay(3000);
  //  ledState[NUM_LEDS - ((time - victoryTime - 3000) % 1000) / 100] = STATE_OFF; // turn OFF one at a time, top to bottom, 0.2 seconds each
+    } else { // second victory sequence is over, now we're just draining for as long as they want to pedal
 
+    for (i = 0; i < NUM_LEDS; i++) {
+      if (i > 6) {  // WHICH LEVELS ARE ON DURING FAILING / DRAINING
+        ledState[i]=STATE_ON;
+      } else {
+        ledState[i]=STATE_OFF;
+      }
+    }
 
-
-    situation=FAILING;
-    if (DEBUG) Serial.println("I switched to FAILING 1");
-    timefailurestarted = time;
+    //situation=FAILING;
+    //if (DEBUG) Serial.println("I switched to FAILING 1");
+    //timefailurestarted = time;
 }}
 
   //set failtime
@@ -675,7 +682,7 @@ void doSafety() {
   } else {
   //  Serial.print("X");
   }
-  if ((time - drainedTime > EMPTYTIME) && situation == FAILING ){
+  if ((time - drainedTime > EMPTYTIME) && (situation == FAILING || situation == VICTORY) ){ // this is also how victory really ends
     situation = IDLING; //FAILING worked! we brought the voltage back to under 14.
     delay(2000);
     timeSinceVoltageBeganFalling = 0;
