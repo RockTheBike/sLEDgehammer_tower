@@ -38,7 +38,7 @@ const int ledPins[NUM_LEDS] = {
 
 // levels at which each LED turns on (not including special states)
 const float ledLevels[NUM_LEDS+1] = {
-  22, 23, 24, 25, 26, 27, 0 }; // last value unused in sledge
+  20, 22, 23, 24, 25, 25.4, 0 }; // last value unused in sledge
 
 #define BRIGHTNESSVOLTAGE 27.0  // voltage at which LED brightness starts to fold back
 #define BRIGHTNESSBASE 255  // maximum brightness value (255 is max value here)
@@ -68,16 +68,17 @@ int analogState[NUM_LEDS] = {0}; // stores the last analogWrite() value for each
 #define STATE_BLINK 1
 #define STATE_BLINKFAST 3
 #define STATE_ON 2
-
+#define STARTVOLTAGE 19
+#define FAILVOLTAGE 20.5
 // on/off/blink/fastblink state of each led
 int ledState[NUM_LEDS] = {
   STATE_OFF};
 
-#define MAX_VOLTS 40.0  //
-#define RECOVERY_VOLTS 36.0
+#define MAX_VOLTS 28.5  // TUNE SAFETY
+#define RECOVERY_VOLTS 27.0
 int relayState = STATE_OFF;
 
-#define DANGER_VOLTS 41.5
+#define DANGER_VOLTS 34.0
 int dangerState = STATE_OFF;
 
 int blinkState = 0;
@@ -88,6 +89,8 @@ int fastBlinkState = 0;
 int voltsAdc = 0;
 float voltsAdcAvg = 0;
 float volts,realVolts = 0;
+float easyadder = 0;
+float voltshelperfactor = 0;
 
 #define IDLING 0 // haven't been pedaled yet, or after draining is over
 #define CHARGING 1 // someone is pedalling, at least not letting voltage fall
@@ -190,7 +193,7 @@ void loop() {
      if (time-timeArbduinoTurnedOn > 2200) situation = IDLING;
    }
 //   || (voltish - volts2SecondsAgo) < 0.03 || (volts2SecondsAgo - voltish) < 0.03
-    if ( voltish < volts2SecondsAgo + 0.1) { // stuck or slow drift
+    if ( voltish < volts2SecondsAgo + 0.1) { // stuck or slow drift TUNE
         timeSinceVoltageBeganFalling++;
   //   if (DEBUG) Serial.print("Voltage has been falling for ");
     //     if (DEBUG) Serial.print(timeSinceVoltageBeganFalling);
@@ -223,7 +226,7 @@ void loop() {
   }
 // Am I idling?
 
-if (volts < 12 && situation != PLAYING && situation != JUSTBEGAN) {
+if (volts < STARTVOLTAGE && situation != PLAYING && situation != JUSTBEGAN) {
   situation = IDLING;
 }
 
@@ -236,7 +239,7 @@ if (situation==IDLING){
 //   if (DEBUG) Serial.print("IDLING, check for PLAYING.");
 //  if (DEBUG) Serial.println (volts - voltRecord[(vRIndex-2)]);
 
-  if (voltish - volts2SecondsAgo > 0.4){ // need to get past startup sequences
+  if (voltish - volts2SecondsAgo > 0.4){ // need to get past startup sequences/ TUNE
 
 //   if (DEBUG) Serial.println ("hey");
     situation = PLAYING;
@@ -252,7 +255,7 @@ if (situation=IDLING && (volts - voltRecord[(vRIndex-2)] > 0.2)){ //JAKE why did
 
 }
 
-   if (timeSinceVoltageBeganFalling > 15 && volts>13.5 && situation != FAILING){
+   if (timeSinceVoltageBeganFalling > 15 && volts > FAILVOLTAGE && situation != FAILING){
               Serial.println("Got to Failing. Voltage has been falling for 15 seconds. ");
 
            situation=FAILING;
@@ -262,11 +265,11 @@ if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY m
 
       voltsBefore =  voltRecord[(vRIndex + VRSIZE - LOSESECONDS) % VRSIZE]; // voltage LOSESECONDS ago
 
-      if (timeSinceVoltageBeganFalling > 15) {
+      if (timeSinceVoltageBeganFalling > 15) {  // Double test? See line 6 up.
               if (DEBUG) Serial.println("Got to Failing. Voltage has been falling for 15 seconds. ");
 
            situation=FAILING;
-      } else if ((voltsBefore - voltish) > 3) { // if voltage has fallen but they haven't given up
+      } else if ((voltsBefore - voltish) > 3) { // if voltage has fallen but they haven't given up TUNE seems harsh. 3V?
        if (DEBUG) Serial.print("voltsBefore: ");
          if (DEBUG) Serial.println(voltsBefore);
   //     if (DEBUG) Serial.print("volts before: ");
@@ -367,10 +370,30 @@ void readSerial() {
 #define FAKEDIVISOR 2900 // 2026 allows doubling of voltage, 3039 allows 50% increase, etc..
 float fakeVoltage() {
   doKnob(); // read knob value into knobAdc
-  float multiplier = (float)FAKEDIVISOR / (float)(FAKEDIVISOR - knobAdc);
-//  if (DEBUG) Serial.println(multiplier); // just for debugging
-  volts = volts * multiplier; // turning knob up returns higher voltage
 
+   easyadder = (float) knobAdc / 185; //TUNE 1013 / 200 = 5V
+
+   voltshelperfactor = (float) ((realVolts - STARTVOLTAGE) / 4);
+
+
+  volts = volts + (voltshelperfactor * easyadder);
+  //  float multiplier = (float)FAKEDIVISOR / (float)(FAKEDIVISOR - knobAdc);
+//if (DEBUG) Serial.println(volt); // just for debugging
+/*if (presentLevel == 1){ //TUNE
+  volts = volts + (float)(easyadder / 4); // turning knob up returns higher voltage
+}
+if (presentLevel == 2){ //TUNE
+  volts = volts + (float)(easyadder / 4); // turning knob up returns higher voltage
+}
+if (presentLevel == 3){ //TUNE
+  volts = volts + (float)(easyadder / 2); // turning knob up returns higher voltage
+}
+if (presentLevel == 4){ //TUNE
+  volts = volts + (float) (easyadder / 1.5); // turning knob up returns higher voltage
+}
+if (presentLevel == 5){ //TUNE
+  volts = volts + easyadder; // turning knob up returns higher voltage
+}*/
   // JAKE -- research how to do 'return'. It wasn't working so I changed to the volts = ... above.
 
 } // if knob is all the way down, voltage is returned unchanged
@@ -421,9 +444,14 @@ void doLeds(){
 
   presentLevel = 0; // we will now load presentLevel with highest level achieved
   for(i = 0; i < NUM_LEDS; i++) {
+
     if(voltish >= ledLevels[i]){
-      ledState[i]=STATE_ON;
+        ledState[i]=STATE_ON;
+       if (easyadder > 4 && i == (NUM_LEDS-1)){
+       ledState[i]=STATE_OFF;
+       }
       presentLevel = i; // presentLevel should equal the highest LED level
+
     }
     else
       ledState[i]=STATE_OFF;
@@ -462,7 +490,7 @@ void doLeds(){
     for (i = 0; i < NUM_LEDS - 1; i++) {
       ledState[i]=STATE_OFF; // turn them all off but the top one, which helps keep it from suddenly feeling easy.
     }
-    ledState[((time - victoryTime) % 1000) / 250]=STATE_ON; // turn on one at a time, bottom to top, 0.1 seconds each
+    ledState[((time - victoryTime) % 1000) / 200]=STATE_ON; // turn on one at a time, bottom to top, 0.1 seconds each
     } else { // 1st victory sequence is over
 
 
@@ -577,10 +605,11 @@ void doSafety() {
     relayState = STATE_ON;
     if (DEBUG) Serial.println("FAILING 10seconds: RELAY OPEN");
   }
-  if (volts > 13.5) {
+
+  if (volts > FAILVOLTAGE) { //TUNE
     drainedTime = time;
   } else {
-  //  Serial.print("X");
+   //Serial.println("volts is less than failvoltage");
   }
   if ((time - drainedTime > EMPTYTIME) && situation == FAILING ){
     situation = IDLING; //FAILING worked! we brought the voltage back to under 14.
@@ -707,6 +736,14 @@ void printDisplay(){
   if (DEBUG) Serial.print("fv ");
   if (DEBUG) Serial.print(knobAdc);
   if (DEBUG) Serial.print("knobAdc ");
+    if (DEBUG) Serial.print(presentLevel);
+  if (DEBUG) Serial.print("presentLevel ");
+  if (DEBUG) Serial.print(easyadder);
+  if (DEBUG) Serial.print("easyadder ");
+    if (DEBUG) Serial.print(voltshelperfactor);
+  if (DEBUG) Serial.print("voltshelperfactor ");
+
+
   if (DEBUG && voltishFactor > 1.0) Serial.print(voltish);
   if (DEBUG && voltishFactor > 1.0) Serial.print("voltish ");
   // if (DEBUG) Serial.print(analogRead(VOLTPIN));
@@ -716,7 +753,7 @@ void printDisplay(){
   if (DEBUG) Serial.print(time - topLevelTime);
   if (DEBUG) Serial.print("  Voltage has been flat or falling for ");
   if (DEBUG) Serial.print(timeSinceVoltageBeganFalling);
-  if (DEBUG) Serial.print(" seconds. & volts2Secondsago = ");
+  if (DEBUG) Serial.print(" S. & v2Secsago = ");
   if (DEBUG) Serial.println(volts2SecondsAgo);
 
   //   if (DEBUG) Serial.print("   ledLevels[numLEDS]: ");
