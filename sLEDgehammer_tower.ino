@@ -25,8 +25,9 @@
  * 2.3 - JS => create branch decida for split-rail system with automatic rail selection for pedallers (see decida.xcf)
  * 2.4 - JS => rip out a bunch of stuff that we haven't used in a long time
  * 2.5 - JS => create branch sledge for ten-line sLEDgehammer pedalpower lightshow reactor
+ * 2.6 - PF => adjust knob to be quantized to one of five values
 */
-char versionStr[] = "sLEDgehammer Panels ver. 2.5 branch:panels";
+char versionStr[] = "1 Bike sLEDgehammer Panels ver. 2.6 branch:fivepanel";
 
 // PINS
 #define RELAYPIN 2 // relay cutoff output pin // NEVER USE 13 FOR A RELAY
@@ -50,8 +51,18 @@ int brightness = 0;  // analogWrite brightness value, updated by getVoltageAndBr
 #define KNOBPIN A4
 int knobAdc = 0;
 void doKnob(){ // look in calcWatts() to see if this is commented out
-  knobAdc = 1013 - analogRead(KNOBPIN); // 50K knob wired normal on 3-conductor cable (ccw=easy cw=hard)
+  knobAdc = 1013 - analogRead(KNOBPIN); // 50K knob wired normal on 3-conductor cable (ccw=easy - cw=hard +)
   if (knobAdc < 0) knobAdc = 0; // values 0-10 count as zero
+  if (knobAdc >= 0 && knobAdc < 250) {
+    knobAdc = 0; }
+  else if (knobAdc >= 250 && knobAdc < 500) {
+    knobAdc = 250;}
+  else if (knobAdc >= 500 && knobAdc < 750) {
+    knobAdc = 500; }
+  else if (knobAdc >= 750 && knobAdc < 1000) {
+    knobAdc = 750; }
+  else if (knobAdc >= 1000 && knobAdc < 1013) {
+    knobAdc = 1013; }
 }
 
 int analogState[NUM_LEDS] = {0}; // stores the last analogWrite() value for each LED
