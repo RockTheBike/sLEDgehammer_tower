@@ -1,36 +1,7 @@
 #define BAUD_RATE 57600
 #define DEBUG 1 // set to 1 to enable serial information printing
-/**** Single-rail Pedalometer
- * Arduino code to run the Dance with Lance Arbduino
- * ver. 1.14
- * Written by:
- * Thomas Spellman <thomas@thosmos.com>
- * Jake <jake@spaz.org>
- * Paul@rockthebike.com
- *
- * Notes:
- * 1.6 - moved version to the top, started protocol of commenting every change in file and in Git commit
- * 1.7 - jake 6-21-2012 disable minusalert until minus rail is pedaled at least once (minusAlertEnable and startupMinusVoltage)
- * 1.8 -- FF added annoying light sequence for when relay fails or customer bypasses protection circuitry.+
- * 1.9 - TS => cleaned up a bit, added state constants, turn off lowest 2 levels when level 3 and above
- * 1.10 - TS => cleaned up levels / pins variables, changed to a "LEDs" naming scheme
- * 1.11 - TS => does a very slow 4digits watts average, fixed the high blink
- * 1.12 - TS => printWatts uses D4Avg instead of watts, 300 baud
- * 1.13 - TS => D4Avg fix, 2400 baud
- * 1.14 - FF => Added CalcWattHours function, changing the Sign's data to Watt Hours, instead of Watts, in time for BMF VII
- * 1.15 - JS => started adding buck converter stuff 
- * 2.1 - JS => changed to split_rail_48v_4level, adding PWM for LED pedalometer, turning off buck converter and sign output
- * 2.15 - JS => fixed so white LEDs are solid before starting to blink at 50v, tuned relay voltages
- * 2.2 - JS => create branch 1b1i for onebike-oneinverter which buck converts up to 60V down to 12V for inverter
- * 2.3 - JS => create branch decida for split-rail system with automatic rail selection for pedallers (see decida.xcf)
- * 2.4 - JS => rip out a bunch of stuff that we haven't used in a long time
- * 2.5 - JS => create branch sledge for ten-line sLEDgehammer pedalpower lightshow reactor
- * 2.6 - PF => adjust knob to be quantized to one of five values
- * 2.7 - JS => create branch dualcaps for two-cap competetive sLEDgehammer
-*/
 char versionStr[] = "2 Bike sLEDgehammer Panels ver. 2.7 branch:dualcaps";
 
-// PINS
 #define RELAYPIN 2 // relay cutoff output pin // NEVER USE 13 FOR A RELAY
 #define NUM_TEAMS 2
 #define NUM_LEDS 6 // Number of LED outputs.
@@ -44,16 +15,9 @@ const int AMPSPIN[NUM_TEAMS] = { A3, A2 };  // Current Sensor Pins
 const float ledLevels[NUM_LEDS+1] = {
   20, 22, 23, 24, 25, 25.4, 0 }; // last value unused in sledge
 
-#define BRIGHTNESSVOLTAGE 27.0  // voltage at which LED brightness starts to fold back
-#define BRIGHTNESSBASE 255  // maximum brightness value (255 is max value here)
-int brightness = 0;  // analogWrite brightness value, updated by getVoltageAndBrightness()
-#define BRIGHTNESSFACTOR (BRIGHTNESSBASE / BRIGHTNESSVOLTAGE) / 2 // results in half PWM at double voltage
-// for every volt over BRIGHTNESSVOLTAGE, pwm is reduced by BRIGHTNESSFACTOR from BRIGHTNESSBASE
-
-// FAKE AC POWER VARIABLES
 #define KNOBPIN A4
 int knobAdc = 0;
-void doKnob(){ // look in calcWatts() to see if this is commented out
+void doKnob(){
   knobAdc = 1013 - analogRead(KNOBPIN); // 50K knob wired normal on 3-conductor cable (ccw=easy - cw=hard +)
   if (knobAdc < 0) knobAdc = 0; // values 0-10 count as zero
   if (knobAdc >= 0 && knobAdc < 250) {
@@ -68,13 +32,9 @@ void doKnob(){ // look in calcWatts() to see if this is commented out
     knobAdc = 1013; }
 }
 
-int analogState[NUM_LEDS] = {0}; // stores the last analogWrite() value for each LED
-                                 // so we don't analogWrite unnecessarily!
-
 #define AVG_CYCLES 50 // average measured values over this many samples
 #define DISPLAY_INTERVAL 500 // when auto-display is on, display every this many milli-seconds
 #define LED_UPDATE_INTERVAL 1000
-#define D4_AVG_PERIOD 10000
 #define BLINK_PERIOD 600
 #define FAST_BLINK_PERIOD 150
 
@@ -124,10 +84,6 @@ int situation = IDLING; // what is the system doing?
 float voltRecord[VRSIZE] = { 0 }; // we store voltage here once per second
 int vRIndex = 0; // keep track of where we store voltage next
 unsigned long vRTime = 0; // last time we stored a voltRecord
-
-int voltsBuckAdc = 0; // for measuring A1 voltage
-float voltsBuckAvg = 0; // for measuring A1 voltage
-float voltsBuck = 0; // averaged A1 voltage
 
 //Current related variables
 int ampsAdc = 0;
@@ -188,7 +144,6 @@ void setup() {
   timeDisplay = millis();
   timeArbduinoTurnedOn = timeDisplay;
   vRTime = timeDisplay; // initialize vRTime since it's a once-per-second thing
-  //  pinMode(9,OUTPUT); // this pin will control the transistors of the huge BUCK converter
 }
 
 void loop() {
@@ -329,27 +284,13 @@ if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY m
     }
     situation = VICTORY;
    if (DEBUG) Serial.print("got to VICTORY 1");
- //   if (DEBUG) Serial.println(volts);
 
   }
 
-  //  doBuck(); // adjust inverter voltage
-  // doSafety();
-  //  getAmps();  // only if we have a current sensor
-  //  calcWatts(); // also adds in knob value for extra wattage, unless commented out
-
-  //  if it's been at least 1/4 second since the last time we measured Watt Hours...
-  /*  if (time - wattHourTimer >= 250) {
-   calcWattHours();
-   wattHourTimer = time; // reset the integrator
-   }
-  */
   doBlink();  // blink the LEDs
   doLeds();
 
   if(time - timeDisplay > DISPLAY_INTERVAL){
-    // printWatts();
-    //    printWattHours();
     printDisplay();
     timeDisplay = time;
   }
@@ -419,17 +360,6 @@ if (presentLevel == 5){ //TUNE
   // JAKE -- research how to do 'return'. It wasn't working so I changed to the volts = ... above.
 
 } // if knob is all the way down, voltage is returned unchanged
-
-#define BUCK_CUTIN 13 // voltage above which transistors can start working
-#define BUCK_CUTOUT 11 // voltage below which transistors can not function
-#define BUCK_VOLTAGE 26.0 // target voltage for inverter to be supplied with
-#define BUCK_VOLTPIN A1 // this pin measures inverter's MINUS TERMINAL voltage
-#define BUCK_HYSTERESIS 0.75 // volts above BUCK_VOLTAGE where we start regulatin
-#define BUCK_PWM_UPJUMP 0.03 // amount to raise PWM value if voltage is below BUCK_VOLTAGE
-#define BUCK_PWM_DOWNJUMP 0.15 // amount to lower PWM value if voltage is too high
-float buckPWM = 0; // PWM value of pin 9
-int lastBuckPWM = 0; // make sure we don't call analogWrite if already set right
-
 
 void  resetVoltRecord() {
 
@@ -557,30 +487,21 @@ void doLeds(){
   for(i = 0; i < NUM_LEDS; i++) {
     if(ledState[i]==STATE_ON){
       digitalWrite(ledPins[i], HIGH);
-      //      if (analogState[i] != brightness) analogWrite(ledPins[i], brightness); // don't analogWrite unnecessarily!
-      analogState[i] = brightness;
     }
     else if (ledState[i]==STATE_OFF){
       digitalWrite(ledPins[i], LOW);
-      analogState[i] = 0;
     }
     else if (ledState[i]==STATE_BLINK && blinkState==1){
       digitalWrite(ledPins[i], HIGH);
-      //      if (analogState[i] != brightness) analogWrite(ledPins[i], brightness); // don't analogWrite unnecessarily!
-      analogState[i] = brightness;
     }
     else if (ledState[i]==STATE_BLINK && blinkState==0){
       digitalWrite(ledPins[i], LOW);
-      analogState[i] = 0;
     }
     else if (ledState[i]==STATE_BLINKFAST && fastBlinkState==1){
       digitalWrite(ledPins[i], HIGH);
-      //      if (analogState[i] != brightness) analogWrite(ledPins[i], brightness); // don't analogWrite unnecessarily!
-      analogState[i] = brightness;
     }
     else if (ledState[i]==STATE_BLINKFAST && fastBlinkState==0){
       digitalWrite(ledPins[i], LOW);
-      analogState[i] = 0;
     }
   }
 
@@ -643,53 +564,6 @@ void doSafety() {
   }
 }
 
-void doBuck() {
-  if (volts > BUCK_CUTIN) { // voltage is high enough to turn on transistors
-    if (volts <= BUCK_VOLTAGE) { // system voltage is lower than inverter target voltage
-      digitalWrite(9,HIGH); // turn transistors fully on, give full voltage to inverter
-      buckPWM = 0;
-    }
-
-    if ((volts > BUCK_VOLTAGE+BUCK_HYSTERESIS) && (buckPWM == 0)) { // begin PWM action
-      buckPWM = 255.0 * (1.0 - ((volts - BUCK_VOLTAGE) / BUCK_VOLTAGE)); // best guess for initial PWM value
-      //      if (DEBUG) Serial.print("buckval=");
-      //      if (DEBUG) Serial.println(buckPWM);
-      analogWrite(9,(int) buckPWM); // actually set the thing in motion
-    }
-
-    if ((volts > BUCK_VOLTAGE) && (buckPWM != 0)) { // adjust PWM value based on results
-      if (volts - voltsBuck > BUCK_VOLTAGE + BUCK_HYSTERESIS) { // inverter voltage is too high
-        buckPWM -= BUCK_PWM_DOWNJUMP; // reduce PWM value to reduce inverter voltage
-        if (buckPWM <= 0) {
-          //          if (DEBUG) Serial.print("0");
-          buckPWM = 1; // minimum PWM value
-        }
-        if (lastBuckPWM != (int) buckPWM) { // only if the PWM value has changed should we...
-          lastBuckPWM = (int) buckPWM;
-          //          if (DEBUG) Serial.print("-");
-          analogWrite(9,lastBuckPWM); // actually set the PWM value
-        }
-      }
-      if (volts - voltsBuck < BUCK_VOLTAGE) { // inverter voltage is too low
-        buckPWM += BUCK_PWM_UPJUMP; // increase PWM value to raise inverter voltage
-        if (buckPWM > 255.0) {
-          buckPWM = 255.0;
-          //          if (DEBUG) Serial.print("X");
-        }
-        if (lastBuckPWM != (int) buckPWM) { // only if the PWM value has changed should we...
-          lastBuckPWM = (int) buckPWM;
-          //          if (DEBUG) Serial.print("+");
-          analogWrite(9,lastBuckPWM); // actually set the PWM value
-        }
-      }
-    }
-  }
-  if (volts < BUCK_CUTOUT) { // system voltage is too low for transistors
-    digitalWrite(9,LOW); // turn off transistors
-  }
-}
-
-
 void getAmps(){
   ampsAdc = analogRead(AMPSPIN);
   ampsAdcAvg = average(ampsAdc, ampsAdcAvg);
@@ -700,17 +574,6 @@ void getVolts(){
   voltsAdc = analogRead(VOLTPIN);
   voltsAdcAvg = average(voltsAdc, voltsAdcAvg);
   volts = adc2volts(voltsAdcAvg);
-
-  voltsBuckAdc = analogRead(BUCK_VOLTPIN);
-  voltsBuckAvg = average(voltsBuckAdc, voltsBuckAvg);
-  voltsBuck = adc2volts(voltsBuckAvg);
-
-  //  brightness = 255 - BRIGHTNESSBASE * (1.0 - (brightnessKnobFactor * (1023 - analogRead(knobpin))));  // the knob affects brightnes
-
-  brightness = BRIGHTNESSBASE;  // full brightness unless dimming is required
-  if (volts > BRIGHTNESSVOLTAGE)
-    brightness -= (BRIGHTNESSFACTOR * (volts - BRIGHTNESSVOLTAGE));  // brightness is reduced by overvoltage
-  // this means if voltage is 28 volts over, PWM will be 255 - (28*4.57) or 127, 50% duty cycle
 }
 
 float average(float val, float avg){
@@ -729,26 +592,12 @@ float adc2amps(float adc){
 
 void calcWatts(){
   watts = volts * amps;
-//  doKnob(); // only if we have a knob to look at
-//  watts += knobAdc / 2; // uncomment this line too
 }
 
 void calcWattHours(){
   wattHours += (watts * ((time - wattHourTimer) / 1000.0) / 3600.0); // measure actual watt-hours
   //wattHours +=  watts *     actual timeslice / in seconds / seconds per hour
   // In the main loop, calcWattHours is being told to run every second.
-}
-
-void printWatts(){
-  if (DEBUG) Serial.print("w");
-  if (DEBUG) Serial.println(watts);
-}
-
-void printWattHours(){
-  if (DEBUG) Serial.print("w"); // tell the sign to print the following number
-  //  the sign will ignore printed decimal point and digits after it!
-  if (DEBUG) Serial.println(wattHours,1); // print just the number of watt-hours
-  //  if (DEBUG) Serial.println(wattHours*10,1); // for this you must put a decimal point onto the sign!
 }
 
 void printDisplay(){
@@ -777,86 +626,4 @@ void printDisplay(){
   if (DEBUG) Serial.print(timeSinceVoltageBeganFalling);
   if (DEBUG) Serial.print(" S. & v2Secsago = ");
   if (DEBUG) Serial.println(volts2SecondsAgo);
-
-  //   if (DEBUG) Serial.print("   ledLevels[numLEDS]: ");
- // if (DEBUG) Serial.println(ledLevels[NUM_LEDS]);
-   //    if (DEBUG) Serial.print("   ledLevels[numLEDS- 1]: ");
- // if (DEBUG) Serial.println(ledLevels[NUM_LEDS - 1]); JAKE
-  //  if (DEBUG) Serial.print(", a: ");
-  //  if (DEBUG) Serial.print(amps);
-  //  if (DEBUG) Serial.print(", va: ");
-  //  if (DEBUG) Serial.print(watts);
-  //  if (DEBUG) Serial.print(", voltsBuck: ");
-  //  if (DEBUG) Serial.print(voltsBuck);
-  //  if (DEBUG) Serial.print(", inverter: ");
-  //  if (DEBUG) Serial.print(volts-voltsBuck);
-
-  //  if (DEBUG) Serial.print(", Levels ");
-  //  for(i = 0; i < NUM_LEDS; i++) {
-  //    if (DEBUG) Serial.print(i);
-  //    if (DEBUG) Serial.print(": ");
-  //    if (DEBUG) Serial.print(ledState[i]);
-  //    if (DEBUG) Serial.print(", ");
-  //  }
-  //  if (DEBUG) Serial.println("");
-  // if (DEBUG) Serial.println();
-}
-
-void setPwmFrequency(int pin, int divisor) {
-  byte mode;
-  if(pin == 5 || pin == 6 || pin == 9 || pin == 10) {
-    switch(divisor) {
-    case 1: 
-      mode = 0x01; 
-      break;
-    case 8: 
-      mode = 0x02; 
-      break;
-    case 64: 
-      mode = 0x03; 
-      break;
-    case 256: 
-      mode = 0x04; 
-      break;
-    case 1024: 
-      mode = 0x05; 
-      break;
-    default: 
-      return;
-    }
-    if(pin == 5 || pin == 6) {
-      TCCR0B = TCCR0B & 0b11111000 | mode;
-    } 
-    else {
-      TCCR1B = TCCR1B & 0b11111000 | mode;
-    }
-  } 
-  else if(pin == 3 || pin == 11) {
-    switch(divisor) {
-    case 1: 
-      mode = 0x01; 
-      break;
-    case 8: 
-      mode = 0x02; 
-      break;
-    case 32: 
-      mode = 0x03; 
-      break;
-    case 64: 
-      mode = 0x04; 
-      break;
-    case 128: 
-      mode = 0x05; 
-      break;
-    case 256: 
-      mode = 0x06; 
-      break;
-    case 1024: 
-      mode = 0x7; 
-      break;
-    default: 
-      return;
-    }
-    TCCR2B = TCCR2B & 0b11111000 | mode;
-  }
 }
