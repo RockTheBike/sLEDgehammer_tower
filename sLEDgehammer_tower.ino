@@ -26,16 +26,19 @@
  * 2.4 - JS => rip out a bunch of stuff that we haven't used in a long time
  * 2.5 - JS => create branch sledge for ten-line sLEDgehammer pedalpower lightshow reactor
  * 2.6 - PF => adjust knob to be quantized to one of five values
+ * 2.7 - JS => create branch dualcaps for two-cap competetive sLEDgehammer
 */
-char versionStr[] = "1 Bike sLEDgehammer Panels ver. 2.6 branch:fivepanel";
+char versionStr[] = "2 Bike sLEDgehammer Panels ver. 2.7 branch:dualcaps";
 
 // PINS
 #define RELAYPIN 2 // relay cutoff output pin // NEVER USE 13 FOR A RELAY
-#define VOLTPIN A0 // Voltage Sensor Pin
-#define AMPSPIN A3 // Current Sensor Pin
+#define NUM_TEAMS 2
 #define NUM_LEDS 6 // Number of LED outputs.
-const int ledPins[NUM_LEDS] = {
-  3, 4, 5, 6, 7, 8};
+const int ledPins[NUM_TEAMS][NUM_LEDS] = {
+  { 3, 4, 5, 6, 7,  8 },
+  { 9,10,11,12,A5, 13 } };
+const int VOLTPIN[NUM_TEAMS] = { A0, A1 };  // Voltage Sensor Pins
+const int AMPSPIN[NUM_TEAMS] = { A3, A2 };  // Current Sensor Pins
 
 // levels at which each LED turns on (not including special states)
 const float ledLevels[NUM_LEDS+1] = {
@@ -97,9 +100,10 @@ int fastBlinkState = 0;
 
 #define VOLTCOEFF 13.179  // larger number interprets as lower voltage
 
-int voltsAdc = 0;
-float voltsAdcAvg = 0;
-float volts,realVolts = 0;
+int voltsAdc[NUM_TEAMS] = { 0, 0 };
+float voltsAdcAvg[NUM_TEAMS] = { 0, 0 };
+float realVolts[NUM_TEAMS] = { 0, 0 };
+float volts[NUM_TEAMS] = { 0, 0 };
 float easyadder = 0;
 float voltshelperfactor = 0;
 
@@ -127,7 +131,12 @@ float voltsBuck = 0; // averaged A1 voltage
 
 //Current related variables
 int ampsAdc = 0;
-float ampsAdcAvg = 0;
+float ampsAdcAvg[NUM_TEAMS] = { 0, 0 };
+const float ampsBase[NUM_TEAMS] = { 508, 510 };  // measurement with zero current
+const float rawAmpsReadingAt3A[NUM_TEAMS] = { 481, 483 };
+const float ampsScale[NUM_TEAMS] = {
+  3 / ( rawAmpsReadingAt3A[0] - ampsBase[0] ),
+  3 / ( rawAmpsReadingAt3A[1] - ampsBase[1] ) };
 float amps = 0;
 float volts2SecondsAgo = 0;
 
@@ -160,6 +169,7 @@ float voltish = 0; // this is where we store the adjusted voltage
 int timeSinceVoltageBeganFalling = 0;
 // var for looping through arrays
 int i = 0;
+int team;
 
 void setup() {
   Serial.begin(BAUD_RATE);
@@ -170,10 +180,10 @@ void setup() {
   digitalWrite(RELAYPIN,LOW);
 
   // init LED pins
-  for(i = 0; i < NUM_LEDS; i++) {
-    pinMode(ledPins[i],OUTPUT);
-      digitalWrite(ledPins[i],LOW);
-  }
+  for(team = 0; team < NUM_TEAMS; team++)
+    for(i = 0; i < NUM_LEDS; i++) {
+      pinMode(ledPins[team][i],OUTPUT);
+    }
   situation = JUSTBEGAN;
   timeDisplay = millis();
   timeArbduinoTurnedOn = timeDisplay;
@@ -183,6 +193,7 @@ void setup() {
 
 void loop() {
   time = millis();
+  for(team = 0; team < NUM_TEAMS; team++) 
   getVolts();
   doSafety();
   realVolts = volts; // save realVolts for printDisplay function
