@@ -210,7 +210,8 @@ void loop() {
     doLeds(team);
 
     if(time - timeDisplay > DISPLAY_INTERVAL){
-      printDisplay(team);
+      printDisplay(0);
+      printDisplay(1);
       timeDisplay = time;
     }
   }
@@ -520,6 +521,8 @@ void calcWattHours(){
   }*/
 
 void printDisplay(int team){
+  Serial.print(team);
+  Serial.print("team ");
   Serial.print(realVolts[team]);
   Serial.print("v ");
   Serial.print(volts[team]);
