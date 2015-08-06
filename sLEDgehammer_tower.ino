@@ -1,5 +1,4 @@
 #define BAUD_RATE 57600
-#define DEBUG 1 // set to 1 to enable serial information printing
 char versionStr[] = "2 Bike sLEDgehammer Panels ver. 2.7 branch:dualcaps";
 
 #define RELAYPIN 2 // relay cutoff output pin // NEVER USE 13 FOR A RELAY
@@ -129,7 +128,7 @@ int team;
 void setup() {
   Serial.begin(BAUD_RATE);
 
-  if (DEBUG) Serial.println(versionStr);
+  Serial.println(versionStr);
 
   pinMode(RELAYPIN, OUTPUT);
   digitalWrite(RELAYPIN,LOW);
@@ -152,16 +151,6 @@ void loop() {
     doSafety();
     realVolts = volts; // save realVolts for printDisplay function
     fakeVoltage(); // adjust 'volts' according to knob
-    clearlyWinning(); // check to see if we're clearly losing and update 'voltish'
-    if (time - serialSent > SERIALINTERVAL) {
-      sendSerial();  // tell other box our presentLevel
-      serialSent = time; // reset the timer
-    }
-    readSerial();  // see if there's a byte waiting on the serial port from other sledgehammer
-    if (otherLevel == 10) { // other box has won!  we lose.
-      if (situation != FAILING) turnThemOffOneAtATime();
-      situation = FAILING;
-    }
     if (time - vRTime > 1000) { // we do this once per second exactly
       if(situation == JUSTBEGAN){
         if (time-timeArbduinoTurnedOn > 2200) situation = IDLING;
@@ -186,7 +175,7 @@ void loop() {
         timeSinceVoltageBeganFalling = 0;
         voltsBefore = voltish;
         resetVoltRecord();
-        if (DEBUG) Serial.println("got to PLAYING 1");// pedaling has begun in earnest
+        Serial.println("got to PLAYING 1");// pedaling has begun in earnest
       }
     }
     if (timeSinceVoltageBeganFalling > 15 && volts > FAILVOLTAGE && situation != FAILING){
@@ -196,13 +185,13 @@ void loop() {
     if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY mode...
       voltsBefore =  voltRecord[(vRIndex + VRSIZE - LOSESECONDS) % VRSIZE]; // voltage LOSESECONDS ago
       if (timeSinceVoltageBeganFalling > 15) {  // Double test? See line 6 up.
-        if (DEBUG) Serial.println("Got to Failing. Voltage has been falling for 15 seconds. ");
+        Serial.println("Got to Failing. Voltage has been falling for 15 seconds. ");
         situation=FAILING;
       } else if ((voltsBefore - voltish) > 3) { // if voltage has fallen but they haven't given up TUNE seems harsh. 3V?
-        if (DEBUG) Serial.print("voltsBefore: ");
-        if (DEBUG) Serial.println(voltsBefore);
+        Serial.print("voltsBefore: ");
+        Serial.println(voltsBefore);
 	situation = FAILING; // forget it, you lose
-        if (DEBUG) Serial.println("got to FAILING 2");
+        Serial.println("got to FAILING 2");
         timefailurestarted = time;
       }
     }
@@ -212,13 +201,9 @@ void loop() {
     if ((situation == PLAYING) && (time - topLevelTime > WINTIME) && (presentLevel == 5)) { // it's been WINTIME milliseconds of solid top-level action!
       if (situation != VICTORY) {
         victoryTime = time; // record the start time of victory
-        Serial.print("s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:"); // tell the other box we won!
-        Serial.print("s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:"); // tell the other box we won!
-        Serial.print("s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:"); // tell the other box we won!
-        Serial.print("s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:"); // tell the other box we won!
       }
     situation = VICTORY;
-    if (DEBUG) Serial.print("got to VICTORY 1");
+    Serial.print("got to VICTORY 1");
     }
 
     doBlink();  // blink the LEDs
@@ -274,7 +259,7 @@ float fakeVoltage() {
 
   volts = volts + (voltshelperfactor * easyadder);
   //  float multiplier = (float)FAKEDIVISOR / (float)(FAKEDIVISOR - knobAdc);
-//if (DEBUG) Serial.println(volt); // just for debugging
+//Serial.println(volt); // just for debugging
 /*if (presentLevel == 1){ //TUNE
   volts = volts + (float)(easyadder / 4); // turning knob up returns higher voltage
 }
@@ -368,8 +353,8 @@ void doLeds(){
 
   if (situation == VICTORY) { // assuming victory is not over
 
-    //  if (DEBUG) Serial.print("VICTORY, volts=");
-     // if (DEBUG) Serial.println(volts);
+    //  Serial.print("VICTORY, volts=");
+     // Serial.println(volts);
 
   if (time - victoryTime <= 3000){
     for (i = 0; i < NUM_LEDS - 1; i++) {
@@ -386,7 +371,7 @@ void doLeds(){
 
 
     situation=FAILING;
-    if (DEBUG) Serial.println("I switched to FAILING 1");
+    Serial.println("I switched to FAILING 1");
     timefailurestarted = time;
 }}
 
@@ -398,8 +383,8 @@ void doLeds(){
         for (i = 0; i < NUM_LEDS; i++) {  // ALL LEVELS ARE ON DURING FAILING / DRAINING
           ledState[i]=STATE_ON;
         }
-    //      if (DEBUG) Serial.print("VICTORY OVER, FAILING, volts = ");
-    //  if (DEBUG) Serial.println(volts);
+    //      Serial.print("VICTORY OVER, FAILING, volts = ");
+    //  Serial.println(volts);
       }
 
           if (situation == IDLING){
@@ -409,8 +394,8 @@ void doLeds(){
             ledState[i]=STATE_OFF;
 
         }
-    //      if (DEBUG) Serial.print("VICTORY OVER, FAILING, volts = ");
-    //  if (DEBUG) Serial.println(volts);
+    //      Serial.print("VICTORY OVER, FAILING, volts = ");
+    //  Serial.println(volts);
       }
 
 
@@ -445,8 +430,8 @@ void turnThemOffOneAtATime(){
   for (i = NUM_LEDS - 2; i >= 0; i--) { // leave the top halogen level ON
   delay(300);
     digitalWrite(ledPins[i], LOW); // turn them off one at a time
-    if (DEBUG) Serial.print(i);
-    if (DEBUG) Serial.println(" OFF");
+    Serial.print(i);
+    Serial.println(" OFF");
     delay(50);
   }
 }
@@ -455,13 +440,13 @@ void doSafety() {
   if (volts > MAX_VOLTS){
     digitalWrite(RELAYPIN, HIGH);
     relayState = STATE_ON;
-    if (DEBUG) Serial.println("RELAY OPEN");
+    Serial.println("RELAY OPEN");
   }
 
   if (relayState == STATE_ON && situation != FAILING && volts < RECOVERY_VOLTS){
     digitalWrite(RELAYPIN, LOW);
     relayState = STATE_OFF;
-    if (DEBUG) Serial.println("RELAY CLOSED");
+    Serial.println("RELAY CLOSED");
   }
 
   if (volts > DANGER_VOLTS){
@@ -477,7 +462,7 @@ void doSafety() {
 //       Open the Relay so volts can drop;
     digitalWrite(RELAYPIN, HIGH);
     relayState = STATE_ON;
-    if (DEBUG) Serial.println("FAILING 10seconds: RELAY OPEN");
+    Serial.println("FAILING 10seconds: RELAY OPEN");
   }
 
   if (volts > FAILVOLTAGE) { //TUNE
@@ -491,7 +476,7 @@ void doSafety() {
     timeSinceVoltageBeganFalling = 0;
     digitalWrite(RELAYPIN, LOW);
     relayState = STATE_OFF;
-    if (DEBUG) Serial.println("EMPTYTIME, got to IDLING 1: RELAY CLOSED");
+    Serial.println("EMPTYTIME, got to IDLING 1: RELAY CLOSED");
   }
 }
 
@@ -532,29 +517,29 @@ void calcWattHours(){
 }
 
 void printDisplay(){
-  if (DEBUG) Serial.print(realVolts);
-  if (DEBUG) Serial.print("v ");
-  if (DEBUG) Serial.print(volts);
-  if (DEBUG) Serial.print("fv ");
-  if (DEBUG) Serial.print(knobAdc);
-  if (DEBUG) Serial.print("knobAdc ");
-    if (DEBUG) Serial.print(presentLevel);
-  if (DEBUG) Serial.print("presentLevel ");
-  if (DEBUG) Serial.print(easyadder);
-  if (DEBUG) Serial.print("easyadder ");
-    if (DEBUG) Serial.print(voltshelperfactor);
-  if (DEBUG) Serial.print("voltshelperfactor ");
+  Serial.print(realVolts);
+  Serial.print("v ");
+  Serial.print(volts);
+  Serial.print("fv ");
+  Serial.print(knobAdc);
+  Serial.print("knobAdc ");
+    Serial.print(presentLevel);
+  Serial.print("presentLevel ");
+  Serial.print(easyadder);
+  Serial.print("easyadder ");
+    Serial.print(voltshelperfactor);
+  Serial.print("voltshelperfactor ");
 
 
-  if (DEBUG && voltishFactor > 1.0) Serial.print(voltish);
-  if (DEBUG && voltishFactor > 1.0) Serial.print("voltish ");
-  // if (DEBUG) Serial.print(analogRead(VOLTPIN));
-  if (DEBUG) Serial.print("   Situation: ");
-  if (DEBUG) Serial.print(situation);
-  if (DEBUG) Serial.print("  time - topLevelTime: ");
-  if (DEBUG) Serial.print(time - topLevelTime);
-  if (DEBUG) Serial.print("  Voltage has been flat or falling for ");
-  if (DEBUG) Serial.print(timeSinceVoltageBeganFalling);
-  if (DEBUG) Serial.print(" S. & v2Secsago = ");
-  if (DEBUG) Serial.println(volts2SecondsAgo);
+  if (voltishFactor > 1.0) Serial.print(voltish);
+  if (voltishFactor > 1.0) Serial.print("voltish ");
+  // Serial.print(analogRead(VOLTPIN));
+  Serial.print("   Situation: ");
+  Serial.print(situation);
+  Serial.print("  time - topLevelTime: ");
+  Serial.print(time - topLevelTime);
+  Serial.print("  Voltage has been flat or falling for ");
+  Serial.print(timeSinceVoltageBeganFalling);
+  Serial.print(" S. & v2Secsago = ");
+  Serial.println(volts2SecondsAgo);
 }
