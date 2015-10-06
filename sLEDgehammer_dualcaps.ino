@@ -225,7 +225,7 @@ if (situation==IDLING){
 //   Serial.print("IDLING, check for PLAYING.");
   //  Serial.println (volts - voltRecord[(vRIndex-2)]);
 
-  if (volts - volts2SecondsAgo > 0.4){ // need to get past startup sequences/ TUNE
+  if (volts - volts2SecondsAgo > 0.4 && volts >= ledLevels[0] ){ // need to get past startup sequences/ TUNE
 
 //   Serial.println ("hey");
     situation = PLAYING;
@@ -243,7 +243,7 @@ if (situation2==IDLING){
 //   Serial.print("IDLING, check for PLAYING.");
 //  Serial.println (volts - voltRecord[(vRIndex-2)]);
 
-  if (volts2 - volts2SecondsAgo2 > 0.4){ // need to get past startup sequences/ TUNE
+  if (volts2 - volts2SecondsAgo2 > 0.4 && volts2 >= ledLevels[0] ){ // need to get past startup sequences/ TUNE
 
 //   Serial.println ("hey");
     situation2 = PLAYING;
@@ -402,7 +402,8 @@ void doLeds(){
   } */
 
 // if voltage is below the lowest level, blink the lowest level
-  if (volts < ledLevels[1] && volts > READYVOLTAGE){
+  if (volts < ledLevels[1] && realVolts > READYVOLTAGE){ // should it be ledLevels[0]?
+    Serial.print("b");
     ledState[0]=STATE_BLINK;
   } else ledState[0] = 0;
 
@@ -516,7 +517,7 @@ void doLeds2(){
   } */
 
 // if voltage is below the lowest level, blink the lowest level
-  if (volts2 < ledLevels[1]  && volts2 > READYVOLTAGE){
+  if (volts2 < ledLevels[1]  && realVolts2 > READYVOLTAGE){ // should it be ledLevels[0]?
     ledState2[0]=STATE_BLINK;
   }
 
