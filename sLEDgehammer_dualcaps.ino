@@ -62,8 +62,8 @@ int relayState = STATE_OFF;
 #define DANGER_VOLTS 34.0
 int dangerState = STATE_OFF;
 
-int blinkState = 0;
-int fastBlinkState = 0;
+float blinkDuty1 = 0.25; // duty cycle for blinking
+float blinkDuty2 = 0.75;
 
 #define VOLTCOEFF 13.179  // larger number interprets as lower voltage
 
@@ -171,18 +171,6 @@ void loop() {
   fakeVoltage(); // adjust 'volts' according to knob
   fakeVoltage2(); // adjust 'volts' according to knob
 
-
-
- if (((time - lastBlinkTime) > BLINK_PERIOD) && blinkState==1) {
-
-                 blinkState = 0;
-                       //   analogWrite(whichPin[i], pwmValue);
-                  lastBlinkTime=time;
-                }   else if (((time - lastBlinkTime) > BLINK_PERIOD) && blinkState==0){
-                 //   Serial.println("I just turned blinkstate to 1.");
-                   blinkState=1;
-                   lastBlinkTime=time;
-  }
 
   if (time - vRTime > 1000) { // we do this once per second exactly
   if(situation == JUSTBEGAN){
@@ -502,7 +490,7 @@ if(ledState[i]==STATE_ON){
 //Blinking Stuff.
 
   else if (ledState[i]==STATE_BLINK){
-      digitalWrite(ledPins[i], (time % BLINK_PERIOD) > (BLINK_PERIOD / 2));
+      digitalWrite(ledPins[i], (time % BLINK_PERIOD) > (BLINK_PERIOD * blinkDuty1));
     }
 
 
@@ -615,7 +603,7 @@ if(ledState2[i]==STATE_ON){
 //Blinking Stuff.
 
   else if (ledState2[i]==STATE_BLINK){
-      digitalWrite(ledPins2[i], (time % BLINK_PERIOD) > (BLINK_PERIOD / 2));
+      digitalWrite(ledPins2[i], (time % BLINK_PERIOD) > (BLINK_PERIOD * blinkDuty2));
     }
 
 } // END doLeds()
@@ -732,9 +720,6 @@ void printDisplay(){
   Serial.print("v2 ");
   Serial.print(volts2);
   Serial.print("fv2 ");
-
-  Serial.print(blinkState);
-  Serial.print("blinkstate ");
 
   Serial.print(presentLevel2);
   Serial.print("presentLevel ");
