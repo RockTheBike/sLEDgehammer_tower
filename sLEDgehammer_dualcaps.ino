@@ -126,9 +126,6 @@ unsigned long serialSent = 0; // last time serial packet was sent
 byte otherLevel = 0; // byte we read from the other utility box
 int presentLevel, presentLevel2 = 0;  // what "level" of transistors are we lit up to right now?
 
-float voltishFactor = 1.0; // multiplier of voltage for competitive purposes
-float voltish, voltish2 = 0; // this is where we store the adjusted voltage
-
 int timeSinceVoltageBeganFalling, timeSinceVoltageBeganFalling2 = 0;
 // var for looping through arrays
 int i = 0;
@@ -688,8 +685,6 @@ void getVolts(){
   voltsAdc = analogRead(VOLTPIN);
   voltsAdcAvg = average(voltsAdc, voltsAdcAvg);
   volts = adc2volts(voltsAdcAvg);
-
-  voltish=volts; //TUN
 }
 
 void getVolts2(){
@@ -729,8 +724,6 @@ void printDisplay(){
   Serial.print("voltshelperfactor ");
 
 
-  if (voltishFactor > 1.0) Serial.print(voltish);
-  if (voltishFactor > 1.0) Serial.print("voltish ");
   // Serial.print(analogRead(VOLTPIN));
   Serial.print("   Situation: ");
   Serial.print(situation2);
