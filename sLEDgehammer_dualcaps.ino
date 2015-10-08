@@ -45,7 +45,6 @@ void doKnob(){
 #define STATE_ON 2
 #define STARTVOLTAGE 19
 #define READYVOLTAGE 16.5
-#define SETVOLTAGE 18
 #define FAILVOLTAGE 20.5
 // on/off/blink/fastblink state of each led
 int ledState[NUM_LEDS] = {
@@ -85,7 +84,8 @@ float voltshelperfactor,  voltshelperfactor2 = 0;
 #define JUSTBEGAN 5
 
 
-int situation, situation2 = IDLING; // what is the system doing?
+int situation = IDLING; // what is the system doing?
+int situation2 = IDLING; // what is the system doing?
 
 #define WINTIME 3000 // how many milliseconds you need to be at top level before you win
 #define LOSESECONDS 30 // how many seconds ago your voltage is compared to see if you gave up
@@ -102,9 +102,6 @@ float voltsBuck = 0; // averaged A1 voltage
 
 float volts2SecondsAgo = 0;
 float volts2SecondsAgo2 = 0;
-
-
-float voltsBefore, voltsBefore2= 0;
 
 // timing variables for various processes: led updates, print, blink, etc
 unsigned long time, lastBlinkTime = 0;
@@ -221,38 +218,34 @@ volts2SecondsAgo2 =  voltRecord2[(vRIndex2 + VRSIZE - 2) % VRSIZE]; // voltage L
 
 
 //Player 1
-if (situation==IDLING){
+if (situation==IDLING || situation==READYSET){
 //   Serial.print("IDLING, check for PLAYING.");
   //  Serial.println (volts - voltRecord[(vRIndex-2)]);
 
-  if (volts - volts2SecondsAgo > 0.4 && volts >= ledLevels[0] ){ // need to get past startup sequences/ TUNE
-
-//   Serial.println ("hey");
-    situation = PLAYING;
-    timeSinceVoltageBeganFalling = 0;
-    voltsBefore = volts;
-    resetVoltRecord();
-    Serial.println("Player 1 got to PLAYING");// pedaling has begun in earnest
-
+  if (volts - volts2SecondsAgo > 0.4){
+    if (volts >= ledLevels[0] ){
+      situation = PLAYING;
+      timeSinceVoltageBeganFalling = 0;
+      resetVoltRecord();
+    } else {
+      situation = READYSET;
+    }
   }
-
 }
 
 //Player 2
-if (situation2==IDLING){
+if (situation2==IDLING || situation2==READYSET){
 //   Serial.print("IDLING, check for PLAYING.");
 //  Serial.println (volts - voltRecord[(vRIndex-2)]);
 
-  if (volts2 - volts2SecondsAgo2 > 0.4 && volts2 >= ledLevels[0] ){ // need to get past startup sequences/ TUNE
-
-//   Serial.println ("hey");
-    situation2 = PLAYING;
-
-    timeSinceVoltageBeganFalling2 = 0;
-    voltsBefore2 = volts2;
- resetVoltRecord2(); //duplicate?
-    Serial.println("Player 2 got to PLAYING");// pedaling has begun in earnest
-
+  if (volts2 - volts2SecondsAgo2 > 0.4){
+    if (volts2 >= ledLevels[0] ){
+      situation2 = PLAYING;
+      timeSinceVoltageBeganFalling2 = 0;
+      resetVoltRecord2();
+    } else {
+      situation2 = READYSET;
+    }
   }
 }
 //Check for VICTORY Player 1
@@ -402,8 +395,7 @@ void doLeds(){
   } */
 
 // if voltage is below the lowest level, blink the lowest level
-  if (volts < ledLevels[1] && realVolts > READYVOLTAGE){ // should it be ledLevels[0]?
-    Serial.print("b");
+  if (volts < ledLevels[1] && realVolts > READYVOLTAGE && situation == READYSET){ // should it be ledLevels[0]?
     ledState[0]=STATE_BLINK;
   } else ledState[0] = 0;
 
@@ -517,7 +509,7 @@ void doLeds2(){
   } */
 
 // if voltage is below the lowest level, blink the lowest level
-  if (volts2 < ledLevels[1]  && realVolts2 > READYVOLTAGE){ // should it be ledLevels[0]?
+  if (volts2 < ledLevels[1]  && realVolts2 > READYVOLTAGE && situation2 == READYSET){ // should it be ledLevels[0]?
     ledState2[0]=STATE_BLINK;
   }
 
@@ -577,11 +569,6 @@ if (situation2 == PLAYING){
             ledState2[i]=STATE_OFF;
 
         }
-
-        if (realVolts2>=READYVOLTAGE){
-        ledState2[0] = STATE_BLINK;  //      Serial.print("VICTORY OVER, FAILING, volts = ");
-        }
-    //  Serial.println(volts);
 }
   // loop through each led and turn on/off or adjust PWM
 
