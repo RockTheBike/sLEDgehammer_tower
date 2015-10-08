@@ -711,27 +711,36 @@ void printDisplay(){
   Serial.print("v ");
   Serial.print(volts);
   Serial.print("fv ");
+  Serial.print(presentLevel);
+  Serial.print("pl ");
+  Serial.print(situation);
+  Serial.print("situ ");
+  for (i = 0; i < NUM_LEDS; i++) Serial.print(ledState[i]);
+  Serial.print("   ");
 
   Serial.print(realVolts2);
   Serial.print("v2 ");
   Serial.print(volts2);
   Serial.print("fv2 ");
-
   Serial.print(presentLevel2);
-  Serial.print("presentLevel ");
-  Serial.print(easyadder);
-  Serial.print("easyadder ");
-    Serial.print(voltshelperfactor);
-  Serial.print("voltshelperfactor ");
-
-
-  // Serial.print(analogRead(VOLTPIN));
-  Serial.print("   Situation: ");
+  Serial.print("pl2 ");
   Serial.print(situation2);
-  Serial.print("  time - topLevelTime: ");
+  Serial.print("situ2 ");
+  for (i = 0; i < NUM_LEDS; i++) Serial.print(ledState2[i]);
+  Serial.print("   ");
+
+  Serial.print(easyadder);
+  Serial.print("easyadder  ");
+  Serial.print(voltshelperfactor);
+  Serial.print("voltshelperfactor ");
+  Serial.print(knobAdc);
+  Serial.print("knobAdc ");
+
+  /* Serial.print("  time - topLevelTime: ");
   Serial.print(time - topLevelTime2);
   Serial.print("  Voltage has been flat or falling for ");
   Serial.print(timeSinceVoltageBeganFalling2);
   Serial.print(" S. & v2Secsago = ");
-  Serial.println(volts2SecondsAgo2);
+  Serial.print(volts2SecondsAgo2); */
+  Serial.println();
 }
