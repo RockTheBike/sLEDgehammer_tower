@@ -403,9 +403,8 @@ void doLeds(){
 
 // if voltage is below the lowest level, blink the lowest level
   if (volts < ledLevels[1] && realVolts > READYVOLTAGE){ // should it be ledLevels[0]?
-    Serial.print("b");
     ledState[0]=STATE_BLINK;
-  } else ledState[0] = 0;
+  }
 
   if (dangerState){
     for(i = 0; i < NUM_LEDS; i++) {
@@ -534,7 +533,7 @@ if (situation2 == PLAYING){
       ledState2[i]=STATE_ON;
 
    if (easyadder > 2 && i == (NUM_LEDS-1)){ // Only turn on Halogens if on an extra level. PRESERVE.
-       ledState[i]=STATE_OFF;
+       ledState2[i]=STATE_OFF;
        }
      // Serial.println("Got here.");
     }
@@ -559,7 +558,7 @@ if (situation2 == PLAYING){
 
 
     situation2=FAILING;
-    Serial.println("1 switched to FAILING after victory sequence");
+    Serial.println("2 switched to FAILING after victory sequence");
     timefailurestarted2 = time;
     }
 } else if (situation2 == FAILING){
