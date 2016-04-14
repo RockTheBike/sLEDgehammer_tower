@@ -634,19 +634,19 @@ void turnThemOffOneAtATime2(){
 }
 
 void doSafety() {
-  if (volts > MAX_VOLTS){
+  if (volts > MAX_VOLTS || volts2 > MAX_VOLTS ){
     digitalWrite(RELAYPIN, HIGH);
     relayState = STATE_ON;
     Serial.println("RELAY OPEN");
   }
 
-  if (relayState == STATE_ON && situation != FAILING && volts < RECOVERY_VOLTS){
+  if (relayState == STATE_ON && situation != FAILING && volts < RECOVERY_VOLTS && volts2 < RECOVERY_VOLTS ){
     digitalWrite(RELAYPIN, LOW);
     relayState = STATE_OFF;
-    Serial.println("RELAY CLOSED");
+    Serial.println("RELAY CLOSED"); // Tower 1 seems to have better hysteresis than tower 2.
   }
 
-  if (volts > DANGER_VOLTS){
+  if (volts > DANGER_VOLTS || volts2 > DANGER_VOLTS ){
     dangerState = STATE_ON;
 
   }
