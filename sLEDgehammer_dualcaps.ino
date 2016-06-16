@@ -429,7 +429,7 @@ if (situation == PLAYING){
     //  Serial.print("VICTORY, volts=");
      // Serial.println(volts);
 
-  if (time - victoryTime <= 3000){
+  if (time - victoryTime <= 5000){
     for (i = 0; i < NUM_LEDS - 1; i++) {
       ledState[i]=STATE_OFF; // turn them all off but the top one, which helps keep it from suddenly feeling easy.
     }
@@ -543,7 +543,7 @@ if (situation2 == PLAYING){
     //  Serial.print("VICTORY, volts=");
      // Serial.println(volts);
 
-  if (time - victoryTime2 <= 3000){
+  if (time - victoryTime2 <= 5000){
     for (i = 0; i < NUM_LEDS - 1; i++) {
       ledState2[i]=STATE_OFF; // turn them all off but the top one, which helps keep it from suddenly feeling easy.
     }
