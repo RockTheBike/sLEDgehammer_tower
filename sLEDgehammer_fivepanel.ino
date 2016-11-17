@@ -5,13 +5,13 @@ char versionStr[] = "2 Bike sLEDgehammer Panels ver. 2.7 branch:xmastree";
 #define RELAYPIN 2 // relay cutoff output pin // NEVER USE 13 FOR A RELAY
 #define VOLTPIN A0 // Voltage Sensor Pin
 #define AMPSPIN A3 // Current Sensor Pin
-#define NUM_LEDS 6 // Number of LED outputs.
+#define NUM_LEDS 8 // Number of LED outputs.
 const int ledPins[NUM_LEDS] = {
-  3, 4, 5, 6, 7, 8};
+  3, 4, 5, 6, 7, 8, 9, 10};
 
 // levels at which each LED turns on (not including special states)
 const float ledLevels[NUM_LEDS+1] = {
-  20, 22, 23, 24, 25, 25.4, 0 }; // last value unused in sledge
+  20, 21, 22, 23,23.5, 24, 25, 25.4, 0 }; // last value unused in sledge
 
 #define KNOBPIN A4
 int knobAdc = 0;
