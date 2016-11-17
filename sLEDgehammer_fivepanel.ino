@@ -42,6 +42,8 @@ void doKnob(){
 #define STATE_ON 2
 #define STARTVOLTAGE 19
 #define FAILVOLTAGE 20.5
+#define ENDPARTYVOLTAGE 22
+
 // on/off/blink/fastblink state of each led
 int ledState[NUM_LEDS] = {
   STATE_OFF};
@@ -428,7 +430,7 @@ void doLeds(){
     //  if (DEBUG) Serial.print("VICTORY, volts=");
      // if (DEBUG) Serial.println(volts);
 
-  if (time - victoryTime <= 3000){
+  if ((time - victoryTime <= 3000) && (voltish < ENDPARTYVOLTAGE)){//make it last longer if people are still pedaling and want to keep the party going.
     for (i = 0; i < NUM_LEDS - 1; i++) {
       ledState[i]=STATE_OFF; // turn them all off but the top one, which helps keep it from suddenly feeling easy.
     }
