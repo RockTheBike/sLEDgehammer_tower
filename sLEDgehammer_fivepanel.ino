@@ -1,6 +1,6 @@
 #define BAUD_RATE 57600
 #define DEBUG 1 // set to 1 to enable serial information printing
-char versionStr[] = "2 Bike sLEDgehammer Panels ver. 2.7 branch:dualcaps";
+char versionStr[] = "2 Bike sLEDgehammer Panels ver. 2.7 branch:fivepanel";
 
 #define RELAYPIN 2 // relay cutoff output pin // NEVER USE 13 FOR A RELAY
 #define VOLTPIN A0 // Voltage Sensor Pin
