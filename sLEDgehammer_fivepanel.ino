@@ -143,6 +143,8 @@ void loop() {
   doSafety();
   realVolts = volts; // save realVolts for printDisplay function
   fakeVoltage(); // adjust 'volts' according to knob
+  if (situation == FAILING) voltishFactor  = 1.0; // reset voltishFactor  since we've failed
+  voltish = (volts * voltishFactor); // calculate the adjusted voltage
 
   if (time - vRTime > 1000) { // we do this once per second exactly
   if(situation == JUSTBEGAN){
