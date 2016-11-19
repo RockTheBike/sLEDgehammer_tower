@@ -245,7 +245,7 @@ if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY m
     }
  // }
 
-  if (presentLevel < 5) { // voltish < ledLevels[NUM_LEDS-1]){
+  if (presentLevel < NUM_LEDS-1) { // voltish < ledLevels[NUM_LEDS-1]){
       topLevelTime = time; // reset timer unless you're at top level
 }
 
@@ -254,7 +254,7 @@ if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY m
  //   Serial.println(volts);
 };*/
 
-  if ((situation == PLAYING) && (time - topLevelTime > WINTIME) && (presentLevel == 5)) { // it's been WINTIME milliseconds of solid top-level action!
+  if ((situation == PLAYING) && (time - topLevelTime > WINTIME) && (presentLevel == NUM_LEDS-1)) { // it's been WINTIME milliseconds of solid top-level action!
 
     if (situation != VICTORY) {
       victoryTime = time; // record the start time of victory
