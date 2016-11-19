@@ -611,11 +611,20 @@ void printDisplay(){
   if (DEBUG && voltishFactor > 1.0) Serial.print("voltish ");
   // if (DEBUG) Serial.print(analogRead(VOLTPIN));
   if (DEBUG) Serial.print("   Situation: ");
-  if (DEBUG) Serial.print(situation);
+  if (DEBUG) Serial.print(situationText());
   if (DEBUG) Serial.print("  time - topLevelTime: ");
   if (DEBUG) Serial.print(time - topLevelTime);
   if (DEBUG) Serial.print("  Voltage has been flat or falling for ");
   if (DEBUG) Serial.print(timeSinceVoltageBeganFalling);
   if (DEBUG) Serial.print(" S. & v2Secsago = ");
   if (DEBUG) Serial.println(volts2SecondsAgo);
+}
+
+String situationText() {
+  if (situation == 0) return "IDLING   ";
+  if (situation == 1) return "CHARGING ";
+  if (situation == 2) return "FAILING  ";
+  if (situation == 3) return "VICTORY  ";
+  if (situation == 4) return "PLAYING  ";
+  if (situation == 5) return "JUSTBEGAN";
 }
