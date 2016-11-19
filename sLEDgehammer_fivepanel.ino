@@ -385,7 +385,7 @@ void doLeds(){
     for (i = 0; i < NUM_LEDS - 1; i++) {
       ledState[i]=STATE_OFF; // turn them all off but the top one, which helps keep it from suddenly feeling easy.
     }
-    ledState[((time - victoryTime) % 1000) / 200]=STATE_ON; // turn on one at a time, bottom to top, 0.1 seconds each
+    ledState[((time - victoryTime) % 1000) / 125]=STATE_ON; // turn on one at a time, bottom to top, 0.125 seconds each
     } else { // 1st victory sequence is over
 
 
