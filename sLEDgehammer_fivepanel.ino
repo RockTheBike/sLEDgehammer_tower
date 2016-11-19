@@ -214,7 +214,7 @@ if (situation=IDLING && (volts - voltRecord[(vRIndex-2)] > 0.2)){ //JAKE why did
 }
 
    if (timeSinceVoltageBeganFalling > 15 && volts > FAILVOLTAGE && situation != FAILING){
-              Serial.println("Got to Failing. Voltage has been falling for 15 seconds. ");
+              Serial.println("Got to Failing.  Voltage has been falling for 15 seconds. ");
 
            situation=FAILING;
       }
@@ -224,7 +224,7 @@ if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY m
       voltsBefore =  voltRecord[(vRIndex + VRSIZE - LOSESECONDS) % VRSIZE]; // voltage LOSESECONDS ago
 
       if (timeSinceVoltageBeganFalling > 15) {  // Double test? See line 6 up.
-              Serial.println("Got to Failing. Voltage has been falling for 15 seconds. ");
+              Serial.println("Got to Failing.       Voltage has been falling for 15 seconds. ");
 
            situation=FAILING;
       } else if ((voltsBefore - voltish) > 3) { // if voltage has fallen but they haven't given up TUNE seems harsh. 3V?
