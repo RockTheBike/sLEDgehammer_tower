@@ -109,7 +109,6 @@ unsigned long drainedTime = 0; // time when volts was last OVER 13.5v
 #define SERIALTIMEOUT 500 // if serial data is older than this, ignore it
 #define SERIALINTERVAL 300 // how much time between sending a serial packet
 unsigned long serialSent = 0; // last time serial packet was sent
-byte otherLevel = 0; // byte we read from the other utility box
 byte presentLevel = 0;  // what "level" of transistors are we lit up to right now?
 
 float voltishFactor = 1.0; // multiplier of voltage for competitive purposes
@@ -144,17 +143,6 @@ void loop() {
   doSafety();
   realVolts = volts; // save realVolts for printDisplay function
   fakeVoltage(); // adjust 'volts' according to knob
-  clearlyWinning(); // check to see if we're clearly losing and update 'voltish'
-  if (time - serialSent > SERIALINTERVAL) {
-    sendSerial();  // tell other box our presentLevel
-    serialSent = time; // reset the timer
-  }
-  readSerial();  // see if there's a byte waiting on the serial port from other sledgehammer
-
-  if (otherLevel == 10) { // other box has won!  we lose.
-    if (situation != FAILING) turnThemOffOneAtATime();
-    situation = FAILING;
-  }
 
   if (time - vRTime > 1000) { // we do this once per second exactly
   if(situation == JUSTBEGAN){
@@ -268,10 +256,6 @@ if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY m
 
     if (situation != VICTORY) {
       victoryTime = time; // record the start time of victory
-      Serial.print("s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:"); // tell the other box we won!
-      Serial.print("s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:"); // tell the other box we won!
-      Serial.print("s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:"); // tell the other box we won!
-      Serial.print("s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:"); // tell the other box we won!
     }
     situation = VICTORY;
    Serial.print("got to VICTORY 1");
@@ -287,36 +271,6 @@ if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY m
   }
 
 
-}
-
-void clearlyWinning() { // adjusts voltishFactor according to whether we're clearly losing
-  if ((otherLevel != 's') && (otherLevel < (presentLevel + 2))) clearlyLosingTime = time; // reset the timer if we're not losing
-  if (time - serialTime > SERIALTIMEOUT) clearlyLosingTime = time; // reset the timer if no recent serial data
-  if (time - clearlyLosingTime > 2000) { // we ARE clearly losing, so let's adjust voltishFactor
-    if (voltishFactor  < 1.5) voltishFactor  += 0.1; // increase our fakery
-    clearlyLosingTime = time; // reset the timer since we made the adjustment
-  }
-  if (situation == FAILING) voltishFactor  = 1.0; // reset voltishFactor  since we've failed
-  voltish = (volts * voltishFactor); // calculate the adjusted voltage
-}
-
-void sendSerial() {
-    Serial.print("s"); // send an "s" to say we're a sledge here!
-    if (presentLevel >= 0 && presentLevel <= 10) Serial.print(char(presentLevel+48)); // send a : if presentLevel is 10(victory)
-    // DON'T DO A PRINTLN BECAUSE THE NEWLINE IS AN ASCII 10 AND WILL BE DETECTED AS VICTORY GODDAMMIT
-    delay(50); // let's not crash the computer with too much serial data
-}
-
-void readSerial() {
-  if (Serial.available()) {
-    byte previousByte = otherLevel; // should be an 's' if this is a data
-    otherLevel = Serial.read();
-    if ((otherLevel >= 48) && (otherLevel <= 58) && (previousByte == 's')) {
-      serialTime = time; // if we got here, it must be another sLEDgehammer
-      otherLevel -= 48; // make it an actual number like 'presentLevel'
-    }
-  }
-  if ((time - serialTime > SERIALTIMEOUT) && (otherLevel != 's')) otherLevel = 0; // if the data is expired, assume zero
 }
 
 #define FAKEDIVISOR 2900 // 2026 allows doubling of voltage, 3039 allows 50% increase, etc..
