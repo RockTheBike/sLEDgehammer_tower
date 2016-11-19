@@ -1,6 +1,7 @@
 #define BAUD_RATE 57600
 char versionStr[] = "2 Bike sLEDgehammer Panels ver. 2.7 branch:xmastree";
 
+#define AUXPOWER 11 // when this FET is on, LEDs get power from AC adaptor
 #define RELAYPIN 2 // relay cutoff output pin // NEVER USE 13 FOR A RELAY
 #define VOLTPIN A0 // Voltage Sensor Pin
 #define AMPSPIN A3 // Current Sensor Pin
@@ -72,7 +73,6 @@ float voltshelperfactor = 0;
 #define PLAYING 4 // the winning display is activated until we're drained
 #define JUSTBEGAN 5
 
-
 int situation = IDLING; // what is the system doing?
 
 #define WINTIME 3000 // how many milliseconds you need to be at top level before you win
@@ -119,9 +119,12 @@ int timeSinceVoltageBeganFalling = 0;
 int i = 0;
 
 void setup() {
+  randomSeed(analogRead(5));
   Serial.begin(BAUD_RATE);
 
   Serial.println(versionStr);
+
+  pinMode(AUXPOWER, OUTPUT);
 
   pinMode(RELAYPIN, OUTPUT);
   digitalWrite(RELAYPIN,LOW);
@@ -265,7 +268,14 @@ if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY m
   }
 
   doBlink();  // blink the LEDs
-  doLeds();
+
+  if (situation == IDLING) {
+    digitalWrite(AUXPOWER,HIGH); // enable LED power from AC adaptor
+    idlingLEDs(); // do the idling animation
+  } else {
+    digitalWrite(AUXPOWER,LOW); // disable LED power from AC adaptor
+    doLeds();
+  }
 
   if(time - timeDisplay > DISPLAY_INTERVAL){
     printDisplay();
@@ -581,3 +591,57 @@ String situationText() {
   if (situation == 4) return "PLAYING  ";
   if (situation == 5) return "JUSTBEGAN";
 }
+
+unsigned long lastRandomSet = 0; // last time a random LED was turned on
+void idlingLEDs() {
+  digitalWrite(ledPins[NUM_LEDS-1],LOW); // turn off the star halogens
+  if ((millis() % 60000) < 20000) { // Do this for 20s [2 Step] At a pace of once every 600 milliseconds
+    if ((millis() % (600*3)) < 600) {
+    doThisToLEDs("1101101");} else if ((millis() % (600*3)) < 600*2) {
+    doThisToLEDs("0110110");} else {
+    doThisToLEDs("1011011");}
+  } else if ((millis() % 60000) < 40000) { // Randomly, [light a random one] for 1 second [followed] with 200ms [of darkness]
+    if (millis() - lastRandomSet > 1000) {
+      for (byte i = 0; i < NUM_LEDS-1; i++) digitalWrite(ledPins[i], LOW); // all dark
+    }
+    if (millis() - lastRandomSet > 1200) {
+      lastRandomSet = millis(); // we're setting one now
+      digitalWrite(ledPins[random(7)],HIGH); // turn a random LED 0..6 on
+    }
+  } else { // Randomly give each hoop a 40% chance of being on. Set them on or off accordingly. Do that for 100ms, then re-roll the randomizer die and repeat.
+    if (millis() - lastRandomSet > 200) { // if it has been 100ms
+      for (byte i = 0; i < NUM_LEDS-1; i++) digitalWrite(ledPins[i], (random(10) < 4)); // 40% chance of being ON
+      lastRandomSet = millis();
+    }
+  }
+}
+
+void doThisToLEDs(String whatToDo) {
+  for (byte i = 0; i < NUM_LEDS-1; i++) { // only the first 7 levels
+    digitalWrite(ledPins[i], whatToDo[i]=='1');
+  }
+}
+
+/*
+Do this for 20s [2 Step] At a pace of once every 600 milliseconds
+
+doThisToLEDs("1101101");
+doThisToLEDs("0110110");
+doThisToLEDs("1011011");
+doThisToLEDs("1101101");
+
+Now do this for 20s [Random hoop]
+
+Randomly, do this, for 1 second each with 200ms between
+(he means randomly light one at a time for 1 second, then dark for 200ms, repeat)
+0100000
+0000100
+1000000
+0001000
+0000001
+
+Now do this for 20s [Sparkle]
+
+Randomly give each hoop a 40% chance of being on. Set them on or off
+accordingly. Do that for 100ms, then re-roll the randomizer die and repeat.
+*/
