@@ -381,7 +381,7 @@ void doLeds(){
     //  Serial.print("VICTORY, volts=");
      // Serial.println(volts);
 
-  if ((time - victoryTime <= 3000) && (voltish < ENDPARTYVOLTAGE)){//make it last longer if people are still pedaling and want to keep the party going.
+  if ((time - victoryTime <= 3000) || (voltish > ENDPARTYVOLTAGE)){//make it last longer if people are still pedaling and want to keep the party going.
     for (i = 0; i < NUM_LEDS - 1; i++) {
       ledState[i]=STATE_OFF; // turn them all off but the top one, which helps keep it from suddenly feeling easy.
     }
