@@ -1,0 +1,66 @@
+For the fuzzy fuzzy got it sequence...
+
+While (in the random hoop part of the supplemental power routine i.e. don't
+eliminate the other 2 sequences you coded){
+
+Pick a random hoop
+
+Create a variable staticFuzzpercentage which starts small, at 5%
+
+For a period of 1000ms, make staticFuzzPercentage go up from 5 to 100 {
+Use staticFuzzPercentage and a randomizer to decide if the light is on or
+off. Whatever the answer, do that for 10ms
+repeat
+}
+
+For the next 1500 ms, turn the same hoop to ON;
+
+Turn the hoop off.
+Wait 1000ms.
+Repeat from the top of the while loop.
+
+}
+
+I would also like to request that you do the testing on your 2nd box. Nio
+doesn't want to drop what he's doing. Hopefully it won't be too much more
+time than what you've already done. Use the testing rig and a smart LED
+strip please. Test both smart LED outputs, the relay, the sLEDgehammer
+functionality, and the knob and reset behavior. Then ask Brittany to help
+you get it to Boston by Friday. Thanks a lot.
+
+>> Please note that requests 2 and 3 are not just for the Boston gig but
+>> would
+>> benefit all sLEDgehammers.
+>>
+>> 1. The two What Watts?! currently have the same coloration. I think it
+>> would make more sense in context if the Red team had more Red and the
+>> Green
+>> Team had more green. I would like to see the following:
+>>
+>> Red team: Power meter in Purple / Violet, Energy meter in Red.
+>>
+>> Green team: Power meter in Aqua, Energy meter in Green.
+>>
+>
+> i can look into this but it would probably be easier for Mark to do this.
+>
+> 2. Victory sequence for the sLEDgehammer Arbduino is the same old
+>>
+>
+> ok i get it
+>
+> 3. Supplemental Power / Always On circuit.
+>>
+>> On the always on circuit, can you make the Random hoop sequence more like
+>> a
+>> radio locking in on a frequency?
+>>
+>> Fuzzy ... Fuzzy ... Got it!
+>>
+>> By Fuzzy, I mean to rapidly (at a fast frequency but visible) cycle it on
+>> and off for a period of about 300ms.
+>>
+>> By Got it, I mean ON for 1000ms.
+>>
+>
+> error - this is not clear enough pseudocode for me to translate.
