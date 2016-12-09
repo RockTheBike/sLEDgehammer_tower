@@ -278,7 +278,8 @@ if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY m
   }
 
   if(time - timeDisplay > DISPLAY_INTERVAL){
-    printDisplay();
+    // too much serial traffic for tethered JBox listening to us
+    //printDisplay();
     timeDisplay = time;
   }
 
