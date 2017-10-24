@@ -39,6 +39,8 @@ void doKnob(){
 #define STARTVOLTAGE 19
 #define READYVOLTAGE 16.5
 #define FAILVOLTAGE 20.5
+int failing = 0; // is the pedaler losing voltage?
+int failing2 = 0;
 
 int ledState[NUM_LEDS] = { STATE_OFF};
 
@@ -78,6 +80,7 @@ int situation, situation2 = IDLING; // what is the system doing?
 #define WINTIME 3000 // how many milliseconds you need to be at top level before you win
 #define LOSESECONDS 30 // how many seconds ago your voltage is compared to see if you gave up
 #define VRSIZE 40 // must be greater than LOSESECONDS but not big enough to use up too much RAM
+#define FAILCOUNTS 10 // how many count of dropping voltage constitutes having walked away
 
 float voltRecord[VRSIZE] = { 0 }; // we store voltage here once per second
 float voltRecord2[VRSIZE] = { 0 }; // we store voltage here once per second
@@ -146,17 +149,46 @@ void loop() {
     vRIndex2++;
     if (vRIndex >= VRSIZE) vRIndex = 0; // wrap the counter if necessary
     if (vRIndex2 >= VRSIZE) vRIndex2 = 0; // wrap the counter if necessary
+
+    volts2SecondsAgo  = voltRecord [(vRIndex  + VRSIZE - 2) % VRSIZE]; // voltage LOSESECONDS ago
+    volts2SecondsAgo2 = voltRecord2[(vRIndex2 + VRSIZE - 2) % VRSIZE]; // voltage LOSESECONDS ago
+
+    if (situation==PLAYING) {
+      if (volts2SecondsAgo  > volts  ) {
+        failing++; // player has given up and walked away
+        Serial.print("failing++ = ");
+        Serial.println(failing);
+      } else if (volts2SecondsAgo  > volts  ) {
+        failing--;
+        if (failing < 0) failing = 0;
+      }
+    }
+    if (situation2==PLAYING) {
+      if (volts2SecondsAgo2 > volts2 ) {
+        failing2++; // player has given up and walked away
+        Serial.print("failing2++ = ");
+        Serial.println(failing2);
+      } else if (volts2SecondsAgo2 > volts2 ) {
+        failing2--;
+        if (failing2 < 0) failing2 = 0;
+      }
+    }
   }
 
-  if (volts < STARTVOLTAGE && situation != PLAYING && situation != JUSTBEGAN) {
+  if ((failing > FAILCOUNTS) || (failing2 > FAILCOUNTS)) {
+    Serial.println("FAILCOUNTS");
+    failing = 0;
+    failing2 = 0;
+    situation = FAILING;
+    situation2 = FAILING;
+  }
+
+  if (volts < STARTVOLTAGE && situation != PLAYING && situation != JUSTBEGAN && situation != FAILING) {
     situation = IDLING;
   }
-  if (volts2 < STARTVOLTAGE && situation2 != PLAYING && situation2 != JUSTBEGAN) {
+  if (volts2 < STARTVOLTAGE && situation2 != PLAYING && situation2 != JUSTBEGAN && situation2 != FAILING) {
     situation2 = IDLING;
   }
-
-  volts2SecondsAgo  = voltRecord [(vRIndex  + VRSIZE - 2) % VRSIZE]; // voltage LOSESECONDS ago
-  volts2SecondsAgo2 = voltRecord2[(vRIndex2 + VRSIZE - 2) % VRSIZE]; // voltage LOSESECONDS ago
 
   if (situation==IDLING){
     if (volts - volts2SecondsAgo > 0.4 && volts >= ledLevels[0] ){ // need to get past startup sequences/ TUNE
@@ -206,13 +238,6 @@ void loop() {
 
   checkLevel();
   checkLevel2();
-
-  if ( presentLevel==0 && volts2SecondsAgo > volts  ) {
-    situation=IDLING;
-  }
-  if ( presentLevel2==0 && volts2SecondsAgo2 > volts2  ) {
-    situation2=IDLING;
-  }
 
   doLeds();
   doLeds2();
@@ -305,7 +330,7 @@ void doLeds(){
     for (i = 0; i < NUM_LEDS; i++) {  // ALL LEVELS ARE ON DURING FAILING / DRAINING
       ledState[i]=STATE_ON;
     }
-    if (realVolts < STARTVOLTAGE) situation=IDLING; // ready to play again. TUNE!
+    if (realVolts < READYVOLTAGE) situation=IDLING; // ready to play again. TUNE!
   } else if (situation == IDLING){
     for (i = 0; i < NUM_LEDS; i++) {
       ledState[i]=STATE_OFF;
@@ -374,7 +399,7 @@ void doLeds2(){
     for (i = 0; i < NUM_LEDS; i++) {  // ALL LEVELS ARE ON DURING FAILING / DRAINING
       ledState2[i]=STATE_ON;
     }
-    if (realVolts2 < STARTVOLTAGE) situation2=IDLING; // ready to play again. TUNE!
+    if (realVolts2 < READYVOLTAGE) situation2=IDLING; // ready to play again. TUNE!
   } else if (situation2 == IDLING){
     for (i = 0; i < NUM_LEDS; i++) {
       ledState2[i]=STATE_OFF;
