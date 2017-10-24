@@ -265,7 +265,7 @@ void doLeds(){
   }
 
   // if voltage is below the lowest level, blink the lowest level
-  if (volts < ledLevels[1] && realVolts > READYVOLTAGE){ // should it be ledLevels[0]?
+  if (volts < ledLevels[1] && realVolts > STARTVOLTAGE){ // should it be ledLevels[0]?
     ledState[0]=STATE_BLINK;
   }
 
@@ -310,7 +310,7 @@ void doLeds(){
     for (i = 0; i < NUM_LEDS; i++) {
       ledState[i]=STATE_OFF;
     }
-    if (realVolts >= READYVOLTAGE){
+    if (realVolts >= STARTVOLTAGE){
       ledState[0] = STATE_BLINK;  //      Serial.print("VICTORY OVER, FAILING, volts = ");
     }
   }
@@ -334,7 +334,7 @@ void doLeds2(){
   }
 
   // if voltage is below the lowest level, blink the lowest level
-  if (volts2 < ledLevels[1]  && realVolts2 > READYVOLTAGE){ // should it be ledLevels[0]?
+  if (volts2 < ledLevels[1]  && realVolts2 > STARTVOLTAGE){ // should it be ledLevels[0]?
     ledState2[0]=STATE_BLINK;
   }
 
@@ -379,7 +379,7 @@ void doLeds2(){
     for (i = 0; i < NUM_LEDS; i++) {
       ledState2[i]=STATE_OFF;
     }
-    if (realVolts2>=READYVOLTAGE){
+    if (realVolts2>=STARTVOLTAGE){
       ledState2[0] = STATE_BLINK;  //      Serial.print("VICTORY OVER, FAILING, volts = ");
     }
   }
