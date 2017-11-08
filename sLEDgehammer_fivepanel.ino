@@ -18,15 +18,15 @@ int knobAdc = 0;
 void doKnob(){
   knobAdc = 1013 - analogRead(KNOBPIN); // 50K knob wired normal on 3-conductor cable (ccw=easy - cw=hard +)
   if (knobAdc < 0) knobAdc = 0; // values 0-10 count as zero
-  if (knobAdc >= 0 && knobAdc < 250) {
+  if (knobAdc >= 0 && knobAdc < 101) {
     knobAdc = 0; }
-  else if (knobAdc >= 250 && knobAdc < 500) {
+  else if (knobAdc >= 101 && knobAdc < 398) {
     knobAdc = 250;}
-  else if (knobAdc >= 500 && knobAdc < 750) {
+  else if (knobAdc >= 398 && knobAdc < 710) {
     knobAdc = 500; }
-  else if (knobAdc >= 750 && knobAdc < 1000) {
+  else if (knobAdc >= 710 && knobAdc < 952) {
     knobAdc = 750; }
-  else if (knobAdc >= 1000 && knobAdc < 1013) {
+  else if (knobAdc >= 952 && knobAdc < 1013) {
     knobAdc = 1013; }
 }
 
@@ -596,12 +596,14 @@ void printDisplay(){
   if (DEBUG) Serial.print(volts);
   if (DEBUG) Serial.print("fv ");
   if (DEBUG) Serial.print(knobAdc);
-  if (DEBUG) Serial.print("knobAdc ");
-    if (DEBUG) Serial.print(presentLevel);
+  if (DEBUG) Serial.print("knobAdc (");
+  if (DEBUG) Serial.print(1013 - analogRead(KNOBPIN));
+  if (DEBUG) Serial.print(") ");
+  if (DEBUG) Serial.print(presentLevel);
   if (DEBUG) Serial.print("presentLevel ");
   if (DEBUG) Serial.print(easyadder);
   if (DEBUG) Serial.print("easyadder ");
-    if (DEBUG) Serial.print(voltshelperfactor);
+  if (DEBUG) Serial.print(voltshelperfactor);
   if (DEBUG) Serial.print("voltshelperfactor ");
 
 
