@@ -310,8 +310,9 @@ void doLeds(){
           if ((easyadder == 4) && (i>0)) ledState[i-1] = STATE_ON; // light two at a time
         }
       }
-      if (easyadder > 2 && i == (NUM_LEDS-1)){ // Only allow Halogens if on easyadder 0 or 1.
+      if (easyadder > 2 && i == (NUM_LEDS-1) && ledState[i]==STATE_ON){ // Only allow Halogens if on easyadder 0 or 1.
         ledState[i]=STATE_OFF; // turn off halogens
+        ledState[i-1]=STATE_ON; // turn on light below Halogens
       }
     }
   } else if (situation == VICTORY) { // assuming victory is not over
@@ -379,8 +380,9 @@ void doLeds2(){
           if ((easyadder == 4) && (i>0)) ledState2[i-1] = STATE_ON; // light two at a time
         }
       }
-      if (easyadder > 2 && i == (NUM_LEDS-1)){ // Only allow Halogens if on easyadder 0 or 1.
+      if (easyadder > 2 && i == (NUM_LEDS-1) && ledState2[i]==STATE_ON){ // Only allow Halogens if on easyadder 0 or 1.
         ledState2[i]=STATE_OFF; // turn off halogens
+        ledState2[i-1]=STATE_ON; // turn on light below Halogens
       }
     }
   } else if (situation2 == VICTORY) { // assuming victory is not over
