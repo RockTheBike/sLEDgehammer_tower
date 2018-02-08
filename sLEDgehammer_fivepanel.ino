@@ -208,6 +208,8 @@ void loop() {
     if (DEBUG) Serial.print("got to VICTORY 1");
   }
 
+  checkLevel();
+
   doBlink();  // blink the LEDs
   doLeds();
 
@@ -288,28 +290,46 @@ void doBlink(){
 
 }
 
-void doLeds() {
-  presentLevel = 0; // we will now load presentLevel with highest level achieved
+void checkLevel(){
   for(i = 0; i < NUM_LEDS; i++) {
-    if(voltish >= ledLevels[i]) {
-      ledState[i]=STATE_ON;
-      if (easyadder > 4 && i == (NUM_LEDS-1)) {
-        ledState[i]=STATE_OFF;
-      }
-      presentLevel = i; // presentLevel should equal the highest LED level
-    } else ledState[i]=STATE_OFF;
+    if (volts>ledLevels[i]){
+      presentLevel=i;
+    }
+  }
+}
+
+void doLeds() {
+  for(i = 0; i < NUM_LEDS; i++) {
+    ledState[i] = STATE_OFF; // Start by turning them all OFF. Later if they deserve to be ON, so be it.
   }
 
-  if (situation == VICTORY) presentLevel = 10; // tell the other box we won!
-  if (situation == FAILING) presentLevel = 0; // tell the other box the sad truth
+  // if voltage is below the lowest level, blink the lowest level
+  if (volts < ledLevels[1] && realVolts > STARTVOLTAGE){ // should it be ledLevels[0]?
+    ledState[0]=STATE_BLINK;
+  }
 
-  if (dangerState) {
+  if (dangerState){
     for(i = 0; i < NUM_LEDS; i++) {
       ledState[i] = STATE_ON; // try to keep the voltage down
     }
   }
-
-  if (situation == VICTORY) { // assuming victory is not over
+  //BIG TEST
+  if (situation == PLAYING){
+    for(i = 0; i < NUM_LEDS; i++) {
+      if ((i <= presentLevel) && (easyadder < 4)){
+        ledState[i]=STATE_ON;
+      } else { // easyadder is 4 or 5 (the easiest)
+        if (i == presentLevel) {
+          ledState[i] = STATE_ON;
+          if ((easyadder == 4) && (i>0)) ledState[i-1] = STATE_ON; // light two at a time
+        }
+      }
+      if (easyadder > 2 && i == (NUM_LEDS-1) && ledState[i]==STATE_ON){ // Only allow Halogens if on easyadder 0 or 1.
+        ledState[i]=STATE_OFF; // turn off halogens
+        ledState[i-1]=STATE_ON; // turn on light below Halogens
+      }
+    }
+  } else if (situation == VICTORY) { // assuming victory is not over
     if (time - victoryTime <= 3000) {
       for (i = 0; i < NUM_LEDS - 1; i++) {
         ledState[i]=STATE_OFF; // turn them all off but the top one, which helps keep it from suddenly feeling easy.
