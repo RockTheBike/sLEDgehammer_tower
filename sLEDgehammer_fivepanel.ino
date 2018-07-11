@@ -14,7 +14,7 @@ const float ledLevels[NUM_LEDS+1] = { 20, 22, 23, 24, 25, 25.4, 0 }; // last val
 #define KNOBPIN A4
 int knobAdc = 0;
 void doKnob(){
-  knobAdc = 1013 - analogRead(KNOBPIN); // 50K knob wired normal on 3-conductor cable (ccw=easy - cw=hard +)
+  knobAdc = 1023 - analogRead(KNOBPIN); // 50K knob wired normal on 3-conductor cable (ccw=easy - cw=hard +)
   if (knobAdc < 0) knobAdc = 0; // values 0-10 count as zero
   if (knobAdc >= 0 && knobAdc < 101) {
     knobAdc = 0; }
@@ -24,8 +24,8 @@ void doKnob(){
     knobAdc = 500; }
   else if (knobAdc >= 710 && knobAdc < 952) {
     knobAdc = 750; }
-  else if (knobAdc >= 952 && knobAdc < 1013) {
-    knobAdc = 1013; }
+  else if (knobAdc >= 952 && knobAdc < 1023) {
+    knobAdc = 1023; }
 }
 
 #define AVG_CYCLES 50 // average measured values over this many samples
@@ -254,7 +254,7 @@ void readSerial() {
 #define FAKEDIVISOR 2900 // 2026 allows doubling of voltage, 3039 allows 50% increase, etc..
 float fakeVoltage() {
   doKnob(); // read knob value into knobAdc
-  easyadder = (float) knobAdc / 185; //TUNE 1013 / 200 = 5V
+  easyadder = (float) knobAdc / 185; //TUNE 1023 / 200 = 5V
   voltshelperfactor = (float) ((realVolts - STARTVOLTAGE) / 4);
   volts = volts + (voltshelperfactor * easyadder);
 } // if knob is all the way down, voltage is returned unchanged
@@ -469,7 +469,7 @@ void printDisplay(){
   if (DEBUG) Serial.print("fv ");
   if (DEBUG) Serial.print(knobAdc);
   if (DEBUG) Serial.print("knobAdc (");
-  if (DEBUG) Serial.print(1013 - analogRead(KNOBPIN));
+  if (DEBUG) Serial.print(1023 - analogRead(KNOBPIN));
   if (DEBUG) Serial.print(") ");
   if (DEBUG) Serial.print(presentLevel);
   if (DEBUG) Serial.print("presentLevel ");
