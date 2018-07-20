@@ -2,6 +2,8 @@
 #define DEBUG 1 // set to 1 to enable serial information printing
 char versionStr[] = "2 Bike sLEDgehammer Panels ver. 2.7 branch:fivepanel";
 
+#define VICTORY_RELAY_PIN       13 // oops i forgot we should never use 13 for a relay
+// but that only matters if it's hooked up to something when you're reprogramming the arbduino
 #define RELAYPIN 2 // relay cutoff output pin // NEVER USE 13 FOR A RELAY
 #define VOLTPIN A0 // Voltage Sensor Pin
 #define AMPSPIN A3 // Current Sensor Pin
@@ -114,6 +116,7 @@ void setup() {
   if (DEBUG) Serial.println(versionStr);
 
   pinMode(RELAYPIN, OUTPUT);
+  pinMode(VICTORY_RELAY_PIN, OUTPUT);
   digitalWrite(RELAYPIN,LOW);
 
   for(i = 0; i < NUM_LEDS; i++) {
@@ -212,6 +215,7 @@ void loop() {
 
   doBlink();  // blink the LEDs
   doLeds();
+  digitalWrite(VICTORY_RELAY_PIN,situation == VICTORY); // if VICTORY activate external relay
 
   if(time - timeDisplay > DISPLAY_INTERVAL){
     printDisplay();
