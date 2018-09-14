@@ -1,5 +1,9 @@
-#define BAUD_RATE 57600
-#define DEBUG 1 // set to 1 to enable serial information printing
+#define DEBUG 0 // set to 1 to enable serial information printing
+#if DEBUG == 1
+#define BAUD_RATE 57600 // full-speed serial output for debugging
+#else
+#define BAUD_RATE 2400 // boxes talking to each other over a cable
+#endif
 char versionStr[] = "2 Bike sLEDgehammer Panels ver. 2.7 branch:fivepanel";
 
 #define VICTORY_RELAY_PIN       13 // oops i forgot we should never use 13 for a relay
@@ -136,10 +140,7 @@ void loop() {
   realVolts = volts; // save realVolts for printDisplay function
   fakeVoltage(); // adjust 'volts' according to knob
   clearlyWinning(); // check to see if we're clearly losing and update 'voltish'
-  if (time - serialSent > SERIALINTERVAL) {
-    sendSerial();  // tell other box our presentLevel
-    serialSent = time; // reset the timer
-  }
+  sendSerial();  // tell other box our presentLevel
   readSerial();  // see if there's a byte waiting on the serial port from other sledgehammer
 
   if (otherLevel == 10) { // other box has won!  we lose.
@@ -235,11 +236,11 @@ void clearlyWinning() { // adjusts voltishFactor according to whether we're clea
 }
 
 void sendSerial() {
-  if (DEBUG == 0) {
+  if ((time - serialSent > SERIALINTERVAL) && (DEBUG == 0)) { // don't send this while in debug mode, clogs the pipes
+    serialSent = time; // reset the timer
     Serial.print("s"); // send an "s" to say we're a sledge here!
     if (presentLevel >= 0 && presentLevel <= 10) Serial.print(char(presentLevel+48)); // send a : if presentLevel is 10(victory)
     // DON'T DO A PRINTLN BECAUSE THE NEWLINE IS AN ASCII 10 AND WILL BE DETECTED AS VICTORY GODDAMMIT
-    delay(50); // let's not crash the computer with too much serial data
   }
 }
 
