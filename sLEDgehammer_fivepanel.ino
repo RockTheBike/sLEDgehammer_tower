@@ -44,7 +44,7 @@ void doKnob(){
 #define STATE_BLINKFAST 3
 #define STATE_ON 2
 #define STARTVOLTAGE 19
-#define FAILVOLTAGE 20.5
+#define FAILVOLTAGE 19.5
 int ledState[NUM_LEDS] = { STATE_OFF}; // on/off/blink/fastblink state of each led
 
 #define MAX_VOLTS 28.5  // TUNE SAFETY
