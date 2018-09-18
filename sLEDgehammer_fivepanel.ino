@@ -73,7 +73,8 @@ float voltshelperfactor = 0;
 
 int situation = IDLING; // what is the system doing?
 
-#define WINTIME 3000 // how many milliseconds you need to be at top level before you win
+#define WINTIME 1000 // how many milliseconds you need to be at top level before you win
+#define VICTORYDURATION 6000 // how many milliseconds to do the victory animation
 #define LOSESECONDS 30 // how many seconds ago your voltage is compared to see if you gave up
 #define VRSIZE 40 // must be greater than LOSESECONDS but not big enough to use up too much RAM
 
@@ -335,8 +336,8 @@ void doLeds() {
       }
     }
   } else if (situation == VICTORY) { // assuming victory is not over
-    if (time - victoryTime <= 3000) {
-      for (i = 0; i < NUM_LEDS - 1; i++) {
+    if (time - victoryTime <= VICTORYDURATION) {
+      for (i = 0; i < NUM_LEDS; i++) {
         ledState[i]=STATE_OFF; // turn them all off but the top one, which helps keep it from suddenly feeling easy.
       }
       ledState[((time - victoryTime) % 1000) / 200]=STATE_ON; // turn on one at a time, bottom to top, 0.1 seconds each
