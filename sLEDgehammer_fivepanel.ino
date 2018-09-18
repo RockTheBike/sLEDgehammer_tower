@@ -141,11 +141,18 @@ void loop() {
   realVolts = volts; // save realVolts for printDisplay function
   fakeVoltage(); // adjust 'volts' according to knob
   clearlyWinning(); // check to see if we're clearly losing and update 'voltish'
-  sendSerial();  // tell other box our presentLevel
+  // don't need this, we only send during victory sendSerial();  // tell other box our presentLevel
   readSerial();  // see if there's a byte waiting on the serial port from other sledgehammer
 
   if (otherLevel == 10) { // other box has won!  we lose.
-    if (situation != FAILING) turnThemOffOneAtATime();
+    digitalWrite(ledPins[0], HIGH); // turn on reds only
+    digitalWrite(ledPins[1], HIGH);
+    digitalWrite(ledPins[2], LOW);
+    digitalWrite(ledPins[3], LOW);
+    digitalWrite(ledPins[4], LOW);
+    digitalWrite(ledPins[5], LOW);
+    while (Serial.available()) Serial.read(); // empty the serial buffer
+    delay(VICTORYDURATION);
     situation = FAILING;
   }
 
