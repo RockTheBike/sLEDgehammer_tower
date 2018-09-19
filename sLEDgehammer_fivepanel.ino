@@ -62,7 +62,7 @@ int fastBlinkState = 0;
 int voltsAdc = 0;
 float voltsAdcAvg = 0;
 float volts,realVolts = 0;
-float easyadder = 0;
+int easyadder = 0;
 float voltshelperfactor = 0;
 
 #define IDLING 0 // haven't been pedaled yet, or after draining is over
@@ -267,7 +267,7 @@ void readSerial() {
 #define FAKEDIVISOR 2900 // 2026 allows doubling of voltage, 3039 allows 50% increase, etc..
 float fakeVoltage() {
   doKnob(); // read knob value into knobAdc
-  easyadder = (float) knobAdc / 185; //TUNE 1023 / 200 = 5V
+  easyadder = knobAdc / 205; //TUNE 1023 / 200 = 5V
   voltshelperfactor = (float) ((realVolts - STARTVOLTAGE) / 4);
   volts = volts + (voltshelperfactor * easyadder);
 } // if knob is all the way down, voltage is returned unchanged
@@ -329,12 +329,12 @@ void doLeds() {
   //BIG TEST
   if (situation == PLAYING){
     for(i = 0; i < NUM_LEDS; i++) {
-      if ((i <= presentLevel) && (easyadder < 4)){
+      if ((i <= presentLevel) && (easyadder < 3)){
         ledState[i]=STATE_ON;
-      } else { // easyadder is 4 or 5 (the easiest)
+      } else { // easyadder is 3 or 4 (the easiest)
         if (i == presentLevel) {
           ledState[i] = STATE_ON;
-          if ((easyadder == 4) && (i>0)) ledState[i-1] = STATE_ON; // light two at a time
+          if ((easyadder == 3) && (i>0)) ledState[i-1] = STATE_ON; // light two at a time
         }
       }
       if (easyadder > 2 && i == (NUM_LEDS-1) && ledState[i]==STATE_ON){ // Only allow Halogens if on easyadder 0 or 1.
