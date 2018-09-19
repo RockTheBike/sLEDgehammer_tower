@@ -74,7 +74,7 @@ float voltshelperfactor = 0;
 int situation = IDLING; // what is the system doing?
 
 #define WINTIME 1000 // how many milliseconds you need to be at top level before you win
-#define VICTORYDURATION 6000 // how many milliseconds to do the victory animation
+#define VICTORYDURATION 17000 // how many milliseconds to do the victory animation
 #define LOSESECONDS 30 // how many seconds ago your voltage is compared to see if you gave up
 #define VRSIZE 40 // must be greater than LOSESECONDS but not big enough to use up too much RAM
 
@@ -339,11 +339,28 @@ void doLeds() {
       }
     }
   } else if (situation == VICTORY) { // assuming victory is not over
-    if (time - victoryTime <= VICTORYDURATION) {
-      for (i = 0; i < NUM_LEDS; i++) {
-        ledState[i]=STATE_OFF; // turn them all off but the top one, which helps keep it from suddenly feeling easy.
+    if (time - victoryTime <= VICTORYDURATION) { // for the first 4000ms do present victory dance
+      if (time - victoryTime <= 4000) {
+        for (i = 0; i < NUM_LEDS; i++) ledState[i]=STATE_OFF; // turn them all off
+        ledState[((time - victoryTime) % 1000) / 167]=STATE_ON; // turn on one at a time, bottom to top, 0.1 seconds each
+      } else if (time - victoryTime <= 12000) { // from 4000 to 12000ms do Checkerboard.
+        if (time - victoryTime <= 8000) { // Turn on 0, 2, 4 for 500ms, then turn on 1,3,5 for 500ms, then do that for 8 times
+          if ((time - victoryTime % 1000) > 500) { // every 500ms
+            for (i = 0; i < NUM_LEDS; i++) ledState[i]=(i & 1) * 2; // turn on 0, 2, 4 (STATE_ON is 2)
+          } else for (i = 0; i < NUM_LEDS; i++) ledState[i]=((i & 1) ^ 1) * 2; // turn on 0, 2, 4 (STATE_ON is 2)
+        } else { // Then double the frequency (every 250ms) for 16 cycles (another 4000ms)
+          if ((time - victoryTime % 1000) > 250) { // every 250ms
+            for (i = 0; i < NUM_LEDS; i++) ledState[i]=(i & 1) * 2; // turn on 0, 2, 4 (STATE_ON is 2)
+          } else for (i = 0; i < NUM_LEDS; i++) ledState[i]=((i & 1) ^ 1) * 2; // turn on 0, 2, 4 (STATE_ON is 2)
+        }
+      } else { // Then from 12000 to 17000 do Big Beethoven Finale.
+        if (time - victoryTime - 12000 < 700) { for (i = 0; i < NUM_LEDS; i++) ledState[i]=STATE_ON ; }
+        else if (time - victoryTime - 12000 < 1000) { for (i = 0; i < NUM_LEDS; i++) ledState[i]=STATE_OFF; }
+        else if (time - victoryTime - 12000 < 1700) { for (i = 0; i < NUM_LEDS; i++) ledState[i]=STATE_ON ; }
+        else if (time - victoryTime - 12000 < 2000) { for (i = 0; i < NUM_LEDS; i++) ledState[i]=STATE_OFF; }
+        else if (time - victoryTime - 12000 < 3400) { for (i = 0; i < NUM_LEDS; i++) ledState[i]=STATE_ON ; }
+        else { for (i = 0; i < NUM_LEDS; i++) ledState[i]=STATE_OFF; }
       }
-      ledState[((time - victoryTime) % 1000) / 167]=STATE_ON; // turn on one at a time, bottom to top, 0.1 seconds each
     } else { // 1st victory sequence is over
       turnThemOffOneAtATime();
       situation=FAILING;
