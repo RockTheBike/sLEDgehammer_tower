@@ -347,11 +347,11 @@ void doLeds() {
         if (time - victoryTime <= 8000) { // Turn on 0, 2, 4 for 500ms, then turn on 1,3,5 for 500ms, then do that for 8 times
           if ((time - victoryTime % 1000) > 500) { // every 500ms
             for (i = 0; i < NUM_LEDS; i++) ledState[i]=(i & 1) * 2; // turn on 0, 2, 4 (STATE_ON is 2)
-          } else for (i = 0; i < NUM_LEDS; i++) ledState[i]=((i & 1) ^ 1) * 2; // turn on 0, 2, 4 (STATE_ON is 2)
+          } else { for (i = 0; i < NUM_LEDS; i++) ledState[i]=((i + 1) & 1) * 2; } // turn on 0, 2, 4 (STATE_ON is 2)
         } else { // Then double the frequency (every 250ms) for 16 cycles (another 4000ms)
           if ((time - victoryTime % 1000) > 250) { // every 250ms
             for (i = 0; i < NUM_LEDS; i++) ledState[i]=(i & 1) * 2; // turn on 0, 2, 4 (STATE_ON is 2)
-          } else for (i = 0; i < NUM_LEDS; i++) ledState[i]=((i & 1) ^ 1) * 2; // turn on 0, 2, 4 (STATE_ON is 2)
+          } else { for (i = 0; i < NUM_LEDS; i++) ledState[i]=((i + 1) & 1) * 2; } // turn on 0, 2, 4 (STATE_ON is 2)
         }
       } else { // Then from 12000 to 17000 do Big Beethoven Finale.
         if (time - victoryTime - 12000 < 700) { for (i = 0; i < NUM_LEDS; i++) ledState[i]=STATE_ON ; }
