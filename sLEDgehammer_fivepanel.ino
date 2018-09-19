@@ -15,7 +15,7 @@ char versionStr[] = "2 Bike sLEDgehammer Panels ver. 2.7 branch:fivepanel";
 const int ledPins[NUM_LEDS] = { 3, 4, 5, 6, 7, 8};
 
 // levels at which each LED turns on (not including special states)
-const float ledLevels[NUM_LEDS+1] = { 20, 22, 23, 24, 25, 25.4, 0 }; // last value unused in sledge
+const float ledLevels[NUM_LEDS+1] = { 20, 21, 22, 23, 24, 25, 0 }; // last value unused in sledge
 
 #define KNOBPIN A4
 int knobAdc = 0;
