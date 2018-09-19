@@ -160,7 +160,7 @@ void loop() {
     if(situation == JUSTBEGAN) {
       if (time-timeArbduinoTurnedOn > 2200) situation = IDLING;
     }
-    if ( voltish < volts2SecondsAgo + 0.1) { // stuck or slow drift TUNE
+    if ( voltish < volts2SecondsAgo + 0.1 && situation == PLAYING) { // stuck or slow drift TUNE / phf added && situation = playing to avoid false start
       timeSinceVoltageBeganFalling++;
     } else {
       timeSinceVoltageBeganFalling = 0;
