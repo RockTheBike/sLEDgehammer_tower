@@ -337,17 +337,13 @@ void doLeds() {
           if ((easyadder == 3) && (i>0)) ledState[i-1] = STATE_ON; // light two at a time
         }
       }
-      if (easyadder > 2 && i == (NUM_LEDS-1) && ledState[i]==STATE_ON){ // Only allow Halogens if on easyadder 0 or 1.
-        ledState[i]=STATE_OFF; // turn off halogens
-        ledState[i-1]=STATE_ON; // turn on light below Halogens
-      }
     }
   } else if (situation == VICTORY) { // assuming victory is not over
     if (time - victoryTime <= VICTORYDURATION) {
       for (i = 0; i < NUM_LEDS; i++) {
         ledState[i]=STATE_OFF; // turn them all off but the top one, which helps keep it from suddenly feeling easy.
       }
-      ledState[((time - victoryTime) % 1000) / 200]=STATE_ON; // turn on one at a time, bottom to top, 0.1 seconds each
+      ledState[((time - victoryTime) % 1000) / 167]=STATE_ON; // turn on one at a time, bottom to top, 0.1 seconds each
     } else { // 1st victory sequence is over
       turnThemOffOneAtATime();
       situation=FAILING;
@@ -393,7 +389,7 @@ void doLeds() {
 void turnThemOffOneAtATime() { //Go into party mode
   for (i = 0; i < NUM_LEDS; i++) digitalWrite(ledPins[i], HIGH); // turn on all levels
   delay(500);
-  for (i = NUM_LEDS - 2; i >= 0; i--) { // leave the top halogen level ON
+  for (i = NUM_LEDS - 1; i >= 0; i--) {
     delay(300);
     digitalWrite(ledPins[i], LOW); // turn them off one at a time
     if (DEBUG) Serial.print(i);
