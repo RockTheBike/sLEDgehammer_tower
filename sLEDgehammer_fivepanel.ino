@@ -345,11 +345,11 @@ void doLeds() {
         ledState[((time - victoryTime) % 1000) / 167]=STATE_ON; // turn on one at a time, bottom to top, 0.1 seconds each
       } else if (time - victoryTime <= 12000) { // from 4000 to 12000ms do Checkerboard.
         if (time - victoryTime <= 8000) { // Turn on 0, 2, 4 for 500ms, then turn on 1,3,5 for 500ms, then do that for 8 times
-          if ((time - victoryTime % 1000) > 500) { // every 500ms
+          if (((time - victoryTime) % 1000) > 500) { // every 500ms
             for (i = 0; i < NUM_LEDS; i++) ledState[i]=(i & 1) * 2; // turn on 0, 2, 4 (STATE_ON is 2)
           } else { for (i = 0; i < NUM_LEDS; i++) ledState[i]=((i + 1) & 1) * 2; } // turn on 0, 2, 4 (STATE_ON is 2)
         } else { // Then double the frequency (every 250ms) for 16 cycles (another 4000ms)
-          if ((time - victoryTime % 1000) > 250) { // every 250ms
+          if (((time - victoryTime) % 500) > 250) { // every 250ms
             for (i = 0; i < NUM_LEDS; i++) ledState[i]=(i & 1) * 2; // turn on 0, 2, 4 (STATE_ON is 2)
           } else { for (i = 0; i < NUM_LEDS; i++) ledState[i]=((i + 1) & 1) * 2; } // turn on 0, 2, 4 (STATE_ON is 2)
         }
