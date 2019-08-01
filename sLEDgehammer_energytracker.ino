@@ -1,6 +1,6 @@
 #define BAUD_RATE 57600
 #define DEBUG 1 // set to 1 to enable serial information printing
-char versionStr[] = "2 Bike sLEDgehammer Panels ver. 2.7 branch:fivepanel";
+char versionStr[] = "2 Bike sLEDgehammer 5Panels branch:energytracker";
 
 #define VICTORY_RELAY_PIN       13 // oops i forgot we should never use 13 for a relay
 // but that only matters if it's hooked up to something when you're reprogramming the arbduino
