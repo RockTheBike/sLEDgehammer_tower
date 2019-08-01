@@ -7,11 +7,31 @@ char versionStr[] = "2 Bike sLEDgehammer 5Panels branch:energytracker";
 #define RELAYPIN 2 // relay cutoff output pin // NEVER USE 13 FOR A RELAY
 #define VOLTPIN A0 // Voltage Sensor Pin
 #define AMPSPIN A3 // Current Sensor Pin
+#define AMPCOEFF 13.05//9.82  // PLUSOUT = OUTPUT, PLUSRAIL = PEDAL INPUT
+#define AMPOFFSET 118.0 // when current sensor is at 0 amps this is the ADC value
 #define NUM_LEDS 6 // Number of LED outputs.
 const int ledPins[NUM_LEDS] = { 3, 4, 5, 6, 7, 8};
 
 // levels at which each LED turns on (not including special states)
 const float ledLevels[NUM_LEDS+1] = { 20, 22, 23, 24, 25, 25.4, 0 }; // last value unused in sledge
+
+#define POWER_STRIP_PIN         7
+#define POWER_STRIP_PIXELS      54 // number of pixels in whatwatt power column
+#define DISPLAY0_PIN    4
+#define DISPLAY1_PIN    5
+#define DISPLAY_PIXELS (8*45)
+#include <Adafruit_NeoPixel.h>
+// bottom right is first pixel, goes up 8, left 1, down 8, left 1...
+// https://www.aliexpress.com/item/8-32-Pixel/32225275406.html
+#include "font1.h"
+uint32_t fontColor = Adafruit_NeoPixel::Color(64,64,25);
+uint32_t backgroundColor = Adafruit_NeoPixel::Color(0,0,1);
+Adafruit_NeoPixel display0 = Adafruit_NeoPixel(DISPLAY_PIXELS, DISPLAY0_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel powerStrip = Adafruit_NeoPixel(POWER_STRIP_PIXELS, POWER_STRIP_PIN, NEO_GRB + NEO_KHZ800);
+
+// scale the logarithmic displays
+#define MIN_POWER 1
+#define MAX_POWER 50000
 
 #define KNOBPIN A4
 int knobAdc = 0;
@@ -31,7 +51,8 @@ void doKnob(){
 }
 
 #define AVG_CYCLES 50 // average measured values over this many samples
-#define DISPLAY_INTERVAL 500 // when auto-display is on, display every this many milli-seconds
+#define DISPLAY_INTERVAL 1000 // when auto-display is on, display every this many milli-seconds
+#define UPDATEDISPLAYS_INTERVAL 1000 // how many milliseconds between running updateDisplays
 #define BLINK_PERIOD 600
 #define FAST_BLINK_PERIOD 150
 
@@ -88,7 +109,8 @@ float voltsBefore = 0;
 unsigned long time = 0;
 unsigned long timeFastBlink = 0;
 unsigned long timeBlink = 0;
-unsigned long timeDisplay = 0;
+unsigned long printTime = 0;
+unsigned long updateDisplayTime = 0;
 unsigned long wattHourTimer = 0;
 unsigned long victoryTime = 0; // how long it's been since we declared victory
 unsigned long topLevelTime = 0; // how long we've been at top voltage level
@@ -106,6 +128,7 @@ byte presentLevel = 0;  // what "level" of transistors are we lit up to right no
 
 float voltishFactor = 1.0; // multiplier of voltage for competitive purposes
 float voltish = 0; // this is where we store the adjusted voltage
+float wattage = 0;
 
 int timeSinceVoltageBeganFalling = 0;
 int i = 0;
@@ -124,15 +147,23 @@ void setup() {
     digitalWrite(ledPins[i],LOW);
   }
   situation = JUSTBEGAN;
-  timeDisplay = millis();
-  timeArbduinoTurnedOn = timeDisplay;
-  vRTime = timeDisplay; // initialize vRTime since it's a once-per-second thing
+  printTime = millis();
+  timeArbduinoTurnedOn = printTime;
+  vRTime = printTime; // initialize vRTime since it's a once-per-second thing
+  powerStrip.begin();
+  powerStrip.show();
+  display0.begin();
+  display0.show();
 }
 
 void loop() {
   time = millis();
   getVolts();
+  getAmps();
+  wattage = volts * amps;
   doSafety();
+  updateDisplay();
+  updatePowerStrip((millis()/10)%100000); // for testing powerStrip TODO: take out
   realVolts = volts; // save realVolts for printDisplay function
   fakeVoltage(); // adjust 'volts' according to knob
   clearlyWinning(); // check to see if we're clearly losing and update 'voltish'
@@ -217,9 +248,9 @@ void loop() {
   doLeds();
   digitalWrite(VICTORY_RELAY_PIN,situation == VICTORY); // if VICTORY activate external relay
 
-  if(time - timeDisplay > DISPLAY_INTERVAL){
+  if(time - printTime > DISPLAY_INTERVAL){
     printDisplay();
-    timeDisplay = time;
+    printTime = time;
   }
 }
 
@@ -453,7 +484,7 @@ float adc2volts(float adc){
 }
 
 float adc2amps(float adc){
-  return (adc - 512) * 0.1220703125;
+  return (adc - AMPOFFSET) / AMPCOEFF;
 }
 
 void calcWatts(){
@@ -494,4 +525,101 @@ void printDisplay(){
   if (DEBUG) Serial.print(timeSinceVoltageBeganFalling);
   if (DEBUG) Serial.print(" S. & v2Secsago = ");
   if (DEBUG) Serial.println(volts2SecondsAgo);
+}
+
+void updatePowerStrip(float wattage){
+  float ledstolight;
+  ledstolight = logPowerRamp(wattage);
+  if( ledstolight > POWER_STRIP_PIXELS ) ledstolight=POWER_STRIP_PIXELS;
+  unsigned char hue = ledstolight/POWER_STRIP_PIXELS * 170.0;
+  uint32_t color = Wheel(powerStrip, hue<1?1:hue);
+  static const uint32_t dark = Adafruit_NeoPixel::Color(0,0,0);
+  doFractionalRamp(powerStrip, 0, POWER_STRIP_PIXELS, ledstolight, color, dark);
+  powerStrip.show();
+}
+
+float logPowerRamp( float p ) {
+  float l = log(p/MIN_POWER)*POWER_STRIP_PIXELS/log(MAX_POWER/MIN_POWER);
+  return l<0 ? 0 : l;
+}
+
+// Input a value 0 to 255 to get a color value. The colours transition rgb back to r.
+uint32_t Wheel(const Adafruit_NeoPixel& strip, byte WheelPos) {
+  if (WheelPos < 85) {
+    return strip.Color(255 - WheelPos * 3, WheelPos * 3, 0);
+  } else if (WheelPos < 170) {
+    WheelPos -= 85;
+    return strip.Color(0, 255 - WheelPos * 3, WheelPos * 3);
+  } else {
+    WheelPos -= 170;
+    return strip.Color(WheelPos * 3, 0, 255 - WheelPos * 3);
+  }
+}
+
+void doFractionalRamp(const Adafruit_NeoPixel& strip, uint8_t offset, uint8_t num_pixels, float ledstolight, uint32_t firstColor, uint32_t secondColor){
+  for( int i=0,pixel=offset; i<=num_pixels; i++,pixel++ ){
+    uint32_t color;
+    if( i<(int)ledstolight )  // definitely firstColor
+        color = firstColor;
+    else if( i>(int)ledstolight )  // definitely secondColor
+        color = secondColor;
+    else  // mix the two proportionally
+        color = weighted_average_of_colors( firstColor, secondColor, ledstolight-(int)ledstolight);
+    strip.setPixelColor(pixel, color);
+  }
+}
+
+uint32_t weighted_average_of_colors( uint32_t colorA, uint32_t colorB, float fraction ){
+  // TODO:  weight brightness to look more linear to the human eye
+  uint8_t RA = (colorA>>16) & 0xff;
+  uint8_t GA = (colorA>>8 ) & 0xff;
+  uint8_t BA = (colorA>>0 ) & 0xff;
+  uint8_t RB = (colorB>>16) & 0xff;
+  uint8_t GB = (colorB>>8 ) & 0xff;
+  uint8_t BB = (colorB>>0 ) & 0xff;
+  return Adafruit_NeoPixel::Color(
+    RA*fraction + RB*(1-fraction),
+    GA*fraction + GB*(1-fraction),
+    BA*fraction + BB*(1-fraction) );
+}
+
+void updateDisplay() {
+  if (millis() - updateDisplayTime > UPDATEDISPLAYS_INTERVAL) {
+    char *buf="     "; // stores the number we're going to display
+    sprintf(buf,"%5d",millis()/100);// for testing display
+    //sprintf(buf,"%5d",(int)(wattage * 100));
+    writeDisplay(display0, buf);
+    buf="    ";
+  }
+}
+
+void writeDisplay(const Adafruit_NeoPixel& strip, char* text) {
+#define DISPLAY_CHARS   5 // number of characters in display
+#define FONT_W 7 // width of font
+#define FONT_H 8 // height of font
+  for (int textIndex=0; textIndex<DISPLAY_CHARS; textIndex++) {
+    char buffer[FONT_H][FONT_W]; // array of horizontal lines, top to bottom, left to right
+    for(int fontIndex=0; fontIndex<sizeof(charList); fontIndex++){ // charList is in font1.h
+      if(charList[fontIndex] == text[textIndex]){ // if fontIndex is the index of the desired letter
+        int pos = fontIndex*FONT_H; // index into CHL where the character starts
+        for(int row=0;row<FONT_H;row++){ // for each horizontal row of pixels
+          memcpy_P(buffer[row], (PGM_P)pgm_read_word(&(CHL[pos+row])), FONT_W); // copy to buffer from flash
+        }
+      }
+    }
+    for (int fontXIndex=0; fontXIndex<FONT_W; fontXIndex++) {
+      for (int fontYIndex=0; fontYIndex<FONT_H; fontYIndex++) {
+        uint32_t pixelColor = buffer[fontYIndex][FONT_W-1-fontXIndex]=='0' ? fontColor : backgroundColor; // here is where the magic happens
+        if ((FONT_W*(DISPLAY_CHARS-1-textIndex) + fontXIndex) & 1) { // odd columns are top-to-bottom
+          strip.setPixelColor((FONT_H*FONT_W)*(DISPLAY_CHARS-1-textIndex) + fontXIndex*FONT_H +           fontYIndex ,pixelColor);
+        } else { // even columns are bottom-to-top
+          strip.setPixelColor((FONT_H*FONT_W)*(DISPLAY_CHARS-1-textIndex) + fontXIndex*FONT_H + (FONT_H-1-fontYIndex),pixelColor);
+        }
+      }
+    }
+  }
+  strip.setPixelColor(((2*FONT_W)-1)*FONT_H+0,fontColor); // light up the decimal point
+  strip.setPixelColor(((2*FONT_W)  )*FONT_H+7,backgroundColor); // keep decimal point visible
+  strip.setPixelColor(((2*FONT_W)-2)*FONT_H+7,backgroundColor); // keep decimal point visible
+  strip.show(); // send the update out to the LEDs
 }
