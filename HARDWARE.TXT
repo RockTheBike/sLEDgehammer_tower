@@ -1,0 +1,4 @@
+wiring to round connectors for "power tower" and 5-digit sign (addressible LEDs):
+pins 1,2: WHITE wire, +5V
+pin 3: GREEN wire, addressible LED data
+pins 4,5: BLACK wire, ground
