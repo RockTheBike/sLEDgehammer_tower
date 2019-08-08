@@ -13,8 +13,8 @@ note: the following two parts share the nearby GND hole
 big 3 watt 2.7Ω resistor from VCC to VDD
 2200μF 10V capacitor from VCC to ground (observe polarity)
 
-make sure the pedal-power inputs (2X 4-pole MEGA neutrik jacks) go through
-relays to the PLUSRAIL terminal on the board
+make sure the pedal-power inputs (2X 4-pole MEGA neutrik jacks) go through two
+relays (and fuses) to the PLUSRAIL terminal on the board
 
 the ultracapaitor bank plus, and the plus to the sLEDgehammer 8-pole connector,
 and the plus wire to the buck converter (which makes 5V for the LED displays),

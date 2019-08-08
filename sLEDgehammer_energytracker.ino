@@ -593,7 +593,11 @@ uint32_t weighted_average_of_colors( uint32_t colorA, uint32_t colorB, float fra
 void updateDisplay(unsigned long displayValue) {
   if (millis() - updateDisplayTime > UPDATEDISPLAYS_INTERVAL) {
     char *buf="     "; // stores the number we're going to display
-    sprintf(buf,"%5d",displayValue);
+    if (wattSeconds/3600 > 99999) { // move the decimal point to ###.##
+      sprintf(buf,"%5d",displayValue/10);
+    } else {
+      sprintf(buf,"%5d",displayValue);
+    }
     //sprintf(buf,"%5d",(int)(watts * 100));
     if (displayValue < 1000) buf[1]='0';
     if (displayValue < 100 ) buf[2]='0';
@@ -628,9 +632,15 @@ void writeDisplay(const Adafruit_NeoPixel& strip, char* text) {
         }
       }
     }
-  } // number of digits V after decimal     V---this should be 077 for odd numbers of digits after the decimal, 700 for even
-  strip.setPixelColor(((3*FONT_W)-1)*FONT_H+0,fontColor);//strip.Color(255,0,0)); // light up the decimal point
-  strip.setPixelColor(((3*FONT_W)  )*FONT_H+7,backgroundColor);//strip.Color(0,0,255)); // keep decimal point visible
-  strip.setPixelColor(((3*FONT_W)-2)*FONT_H+7,backgroundColor);//strip.Color(0,255,0)); // keep decimal point visible
+  }   // number of digits V after decimal     V---this should be 077 for odd numbers of digits after the decimal, 700 for even
+  if (wattSeconds/3600 > 99999) { // move the decimal point to ###.##
+    strip.setPixelColor(((2*FONT_W)-1)*FONT_H+7,fontColor);//strip.Color(255,0,0)); // light up the decimal point
+    strip.setPixelColor(((2*FONT_W)  )*FONT_H+0,backgroundColor);//strip.Color(0,0,255)); // keep decimal point visible
+    strip.setPixelColor(((2*FONT_W)-2)*FONT_H+0,backgroundColor);//strip.Color(0,255,0)); // keep decimal point visible
+  } else { // the decimal point at ##.###
+    strip.setPixelColor(((3*FONT_W)-1)*FONT_H+0,fontColor);//strip.Color(255,0,0)); // light up the decimal point
+    strip.setPixelColor(((3*FONT_W)  )*FONT_H+7,backgroundColor);//strip.Color(0,0,255)); // keep decimal point visible
+    strip.setPixelColor(((3*FONT_W)-2)*FONT_H+7,backgroundColor);//strip.Color(0,255,0)); // keep decimal point visible
+  }
   strip.show(); // send the update out to the LEDs
 }
