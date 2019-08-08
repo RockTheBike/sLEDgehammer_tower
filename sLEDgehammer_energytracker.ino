@@ -132,9 +132,9 @@ int timeSinceVoltageBeganFalling = 0;
 int i = 0;
 
 void setup() {
-  Serial.begin(BAUD_RATE);
+//  Serial.begin(BAUD_RATE);
 
-  Serial.println(versionStr);
+//  Serial.println(versionStr);
 
   pinMode(RELAYPIN, OUTPUT);
   pinMode(VICTORY_RELAY_PIN, OUTPUT);
@@ -375,7 +375,7 @@ void doLeds() {
     } else { // 1st victory sequence is over
       turnThemOffOneAtATime();
       situation=FAILING;
-      Serial.println("I switched to FAILING 1");
+//      Serial.println("I switched to FAILING 1");
       timefailurestarted = time;
     }
   }
@@ -530,8 +530,8 @@ void printDisplay(){
 //  Serial.print(timeSinceVoltageBeganFalling);
 //  Serial.print(" S. & v2Secsago = ");
 //  Serial.print(volts2SecondsAgo);
-  Serial.print("amps="+String(amps)+" ("+String(analogRead(AMPSPIN)));
-  Serial.println(") watts="+String(watts)+" watthrs="+String(wattSeconds/3600));
+//  Serial.print("amps="+String(amps)+" ("+String(analogRead(AMPSPIN)));
+//  Serial.println(") watts="+String(watts)+" watthrs="+String(wattSeconds/3600));
 }
 
 void updatePowerStrip(float powerValue){
