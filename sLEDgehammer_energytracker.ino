@@ -2,6 +2,7 @@
 #define DEBUG 1 // set to 1 to enable serial information printing
 char versionStr[] = "2 Bike sLEDgehammer 5Panels branch:energytracker";
 
+#define RESET_ENERGY_PIN        A5 // a button shorts this to ground to clear energy count
 #define VICTORY_RELAY_PIN       13 // oops i forgot we should never use 13 for a relay
 // but that only matters if it's hooked up to something when you're reprogramming the arbduino
 #define RELAYPIN 2 // relay cutoff output pin // NEVER USE 13 FOR A RELAY
@@ -15,17 +16,16 @@ const int ledPins[NUM_LEDS] = { 3, 4, 5, 6, 7, 8};
 // levels at which each LED turns on (not including special states)
 const float ledLevels[NUM_LEDS+1] = { 20, 22, 23, 24, 25, 25.4, 0 }; // last value unused in sledge
 
-#define POWER_STRIP_PIN         7
+#define POWER_STRIP_PIN         11 // blue data wire for addressible LEDs on Power Tower
 #define POWER_STRIP_PIXELS      54 // number of pixels in whatwatt power column
-#define DISPLAY0_PIN    4
-#define DISPLAY1_PIN    5
-#define DISPLAY_PIXELS (8*45)
+#define DISPLAY0_PIN            12 // green data wire for five-digit number display
+#define DISPLAY_PIXELS 280
 #include <Adafruit_NeoPixel.h>
 // bottom right is first pixel, goes up 8, left 1, down 8, left 1...
 // https://www.aliexpress.com/item/8-32-Pixel/32225275406.html
 #include "font1.h"
-uint32_t fontColor = Adafruit_NeoPixel::Color(64,64,25);
-uint32_t backgroundColor = Adafruit_NeoPixel::Color(0,0,1);
+uint32_t fontColor = Adafruit_NeoPixel::Color(100,100,100);
+uint32_t backgroundColor = Adafruit_NeoPixel::Color(0,0,0);
 Adafruit_NeoPixel display0 = Adafruit_NeoPixel(DISPLAY_PIXELS, DISPLAY0_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel powerStrip = Adafruit_NeoPixel(POWER_STRIP_PIXELS, POWER_STRIP_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -52,7 +52,7 @@ void doKnob(){
 
 #define AVG_CYCLES 50 // average measured values over this many samples
 #define DISPLAY_INTERVAL 1000 // when auto-display is on, display every this many milli-seconds
-#define UPDATEDISPLAYS_INTERVAL 1000 // how many milliseconds between running updateDisplays
+#define UPDATEDISPLAYS_INTERVAL 750 // how many milliseconds between running updateDisplays
 #define BLINK_PERIOD 600
 #define FAST_BLINK_PERIOD 150
 
@@ -128,7 +128,6 @@ byte presentLevel = 0;  // what "level" of transistors are we lit up to right no
 
 float voltishFactor = 1.0; // multiplier of voltage for competitive purposes
 float voltish = 0; // this is where we store the adjusted voltage
-float wattage = 0;
 
 int timeSinceVoltageBeganFalling = 0;
 int i = 0;
@@ -153,17 +152,19 @@ void setup() {
   powerStrip.begin();
   powerStrip.show();
   display0.begin();
+  //for (int j=0; j<DISPLAY_PIXELS; j++) {display0.setPixelColor(j,j);}
   display0.show();
+  //delay(3000);
 }
 
 void loop() {
   time = millis();
   getVolts();
   getAmps();
-  wattage = volts * amps;
+  calcWatts();
   doSafety();
-  updateDisplay();
-  updatePowerStrip((millis()/10)%100000); // for testing powerStrip TODO: take out
+  updateDisplay((millis()/1)%100000);
+  updatePowerStrip((millis()*10)%50000);//watts); // for testing powerStrip TODO: take out
   realVolts = volts; // save realVolts for printDisplay function
   fakeVoltage(); // adjust 'volts' according to knob
   clearlyWinning(); // check to see if we're clearly losing and update 'voltish'
@@ -527,9 +528,9 @@ void printDisplay(){
   if (DEBUG) Serial.println(volts2SecondsAgo);
 }
 
-void updatePowerStrip(float wattage){
+void updatePowerStrip(float powerValue){
   float ledstolight;
-  ledstolight = logPowerRamp(wattage);
+  ledstolight = logPowerRamp(powerValue);
   if( ledstolight > POWER_STRIP_PIXELS ) ledstolight=POWER_STRIP_PIXELS;
   unsigned char hue = ledstolight/POWER_STRIP_PIXELS * 170.0;
   uint32_t color = Wheel(powerStrip, hue<1?1:hue);
@@ -583,13 +584,14 @@ uint32_t weighted_average_of_colors( uint32_t colorA, uint32_t colorB, float fra
     BA*fraction + BB*(1-fraction) );
 }
 
-void updateDisplay() {
+void updateDisplay(unsigned long displayValue) {
   if (millis() - updateDisplayTime > UPDATEDISPLAYS_INTERVAL) {
     char *buf="     "; // stores the number we're going to display
-    sprintf(buf,"%5d",millis()/100);// for testing display
-    //sprintf(buf,"%5d",(int)(wattage * 100));
+    sprintf(buf,"%5d",displayValue);
+    //sprintf(buf,"%5d",(int)(watts * 100));
     writeDisplay(display0, buf);
     buf="    ";
+    updateDisplayTime = millis();
   }
 }
 
@@ -618,8 +620,8 @@ void writeDisplay(const Adafruit_NeoPixel& strip, char* text) {
       }
     }
   }
-  strip.setPixelColor(((2*FONT_W)-1)*FONT_H+0,fontColor); // light up the decimal point
-  strip.setPixelColor(((2*FONT_W)  )*FONT_H+7,backgroundColor); // keep decimal point visible
-  strip.setPixelColor(((2*FONT_W)-2)*FONT_H+7,backgroundColor); // keep decimal point visible
+  strip.setPixelColor(((2*FONT_W)-1)*FONT_H+7,fontColor);//strip.Color(255,0,0)); // light up the decimal point
+  strip.setPixelColor(((2*FONT_W)  )*FONT_H+0,backgroundColor);//strip.Color(0,0,255)); // keep decimal point visible
+  strip.setPixelColor(((2*FONT_W)-2)*FONT_H+0,backgroundColor);//strip.Color(0,255,0)); // keep decimal point visible
   strip.show(); // send the update out to the LEDs
 }
