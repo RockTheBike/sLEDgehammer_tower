@@ -1,5 +1,4 @@
 #define BAUD_RATE 57600
-#define DEBUG 1 // set to 1 to enable serial information printing
 char versionStr[] = "2 Bike sLEDgehammer 5Panels branch:energytracker";
 
 #define RESET_ENERGY_PIN        A5 // a button shorts this to ground to clear energy count
@@ -133,9 +132,9 @@ int timeSinceVoltageBeganFalling = 0;
 int i = 0;
 
 void setup() {
-  Serial.begin(BAUD_RATE);
+//  Serial.begin(BAUD_RATE);
 
-  if (DEBUG) Serial.println(versionStr);
+//  Serial.println(versionStr);
 
   pinMode(RELAYPIN, OUTPUT);
   pinMode(VICTORY_RELAY_PIN, OUTPUT);
@@ -168,11 +167,11 @@ void loop() {
   realVolts = volts; // save realVolts for printDisplay function
   fakeVoltage(); // adjust 'volts' according to knob
   clearlyWinning(); // check to see if we're clearly losing and update 'voltish'
-  if (time - serialSent > SERIALINTERVAL) {
-    sendSerial();  // tell other box our presentLevel
-    serialSent = time; // reset the timer
-  }
-  readSerial();  // see if there's a byte waiting on the serial port from other sledgehammer
+  //if (time - serialSent > SERIALINTERVAL) {
+  //  sendSerial();  // tell other box our presentLevel
+  //  serialSent = time; // reset the timer
+  //}
+  //readSerial();  // see if there's a byte waiting on the serial port from other sledgehammer
 
   if (otherLevel == 10) { // other box has won!  we lose.
     if (situation != FAILING) turnThemOffOneAtATime();
@@ -207,25 +206,25 @@ void loop() {
       timeSinceVoltageBeganFalling = 0;
       voltsBefore = voltish;
       resetVoltRecord();
-      if (DEBUG) Serial.println("got to PLAYING 1");// pedaling has begun in earnest
+//      Serial.println("got to PLAYING 1");// pedaling has begun in earnest
     }
   }
 
    if (timeSinceVoltageBeganFalling > 15 && volts > FAILVOLTAGE && situation != FAILING) {
-     Serial.println("Got to Failing. Voltage has been falling for 15 seconds. ");
+//     Serial.println("Got to Failing. Voltage has been falling for 15 seconds. ");
      situation=FAILING;
    }
 
   if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY mode...
     voltsBefore =  voltRecord[(vRIndex + VRSIZE - LOSESECONDS) % VRSIZE]; // voltage LOSESECONDS ago
     if (timeSinceVoltageBeganFalling > 15) {  // Double test? See line 6 up.
-      if (DEBUG) Serial.println("Got to Failing. Voltage has been falling for 15 seconds. ");
+//      Serial.println("Got to Failing. Voltage has been falling for 15 seconds. ");
       situation=FAILING;
     } else if ((voltsBefore - voltish) > 3) { // if voltage has fallen but they haven't given up TUNE seems harsh. 3V?
-      if (DEBUG) Serial.print("voltsBefore: ");
-      if (DEBUG) Serial.println(voltsBefore);
+//      Serial.print("voltsBefore: ");
+//      Serial.println(voltsBefore);
       situation = FAILING; // forget it, you lose
-      if (DEBUG) Serial.println("got to FAILING 2");
+//      Serial.println("got to FAILING 2");
       timefailurestarted = time;
     }
   }
@@ -237,10 +236,10 @@ void loop() {
   if ((situation == PLAYING) && (time - topLevelTime > WINTIME) && (presentLevel == 5)) { // it's been WINTIME milliseconds of solid top-level action!
     if (situation != VICTORY) {
       victoryTime = time; // record the start time of victory
-      Serial.print("s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:"); // tell the other box we won!
+//      Serial.print("s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:s:"); // tell the other box we won!
     }
     situation = VICTORY;
-    if (DEBUG) Serial.print("got to VICTORY 1");
+//    Serial.print("got to VICTORY 1");
   }
 
   checkLevel();
@@ -250,7 +249,7 @@ void loop() {
   digitalWrite(VICTORY_RELAY_PIN,situation == VICTORY); // if VICTORY activate external relay
 
   if(time - printTime > DISPLAY_INTERVAL){
-    printDisplay();
+    //printDisplay();
     printTime = time;
   }
 }
@@ -266,26 +265,24 @@ void clearlyWinning() { // adjusts voltishFactor according to whether we're clea
   voltish = (volts * voltishFactor); // calculate the adjusted voltage
 }
 
-void sendSerial() {
-  if (DEBUG == 0) {
-    Serial.print("s"); // send an "s" to say we're a sledge here!
-    if (presentLevel >= 0 && presentLevel <= 10) Serial.print(char(presentLevel+48)); // send a : if presentLevel is 10(victory)
-    // DON'T DO A PRINTLN BECAUSE THE NEWLINE IS AN ASCII 10 AND WILL BE DETECTED AS VICTORY GODDAMMIT
-    delay(50); // let's not crash the computer with too much serial data
-  }
-}
-
-void readSerial() {
-  if (Serial.available()) {
-    byte previousByte = otherLevel; // should be an 's' if this is a data
-    otherLevel = Serial.read();
-    if ((otherLevel >= 48) && (otherLevel <= 58) && (previousByte == 's')) {
-      serialTime = time; // if we got here, it must be another sLEDgehammer
-      otherLevel -= 48; // make it an actual number like 'presentLevel'
-    }
-  }
-  if ((time - serialTime > SERIALTIMEOUT) && (otherLevel != 's')) otherLevel = 0; // if the data is expired, assume zero
-}
+//void sendSerial() {
+//  Serial.print("s"); // send an "s" to say we're a sledge here!
+//  if (presentLevel >= 0 && presentLevel <= 10) Serial.print(char(presentLevel+48)); // send a : if presentLevel is 10(victory)
+//  // DON'T DO A PRINTLN BECAUSE THE NEWLINE IS AN ASCII 10 AND WILL BE DETECTED AS VICTORY GODDAMMIT
+//  delay(50); // let's not crash the computer with too much serial data
+//}
+//
+//void readSerial() {
+//  if (Serial.available()) {
+//    byte previousByte = otherLevel; // should be an 's' if this is a data
+//    otherLevel = Serial.read();
+//    if ((otherLevel >= 48) && (otherLevel <= 58) && (previousByte == 's')) {
+//      serialTime = time; // if we got here, it must be another sLEDgehammer
+//      otherLevel -= 48; // make it an actual number like 'presentLevel'
+//    }
+//  }
+//  if ((time - serialTime > SERIALTIMEOUT) && (otherLevel != 's')) otherLevel = 0; // if the data is expired, assume zero
+//}
 
 #define FAKEDIVISOR 2900 // 2026 allows doubling of voltage, 3039 allows 50% increase, etc..
 float fakeVoltage() {
@@ -374,7 +371,7 @@ void doLeds() {
     } else { // 1st victory sequence is over
       turnThemOffOneAtATime();
       situation=FAILING;
-      if (DEBUG) Serial.println("I switched to FAILING 1");
+      Serial.println("I switched to FAILING 1");
       timefailurestarted = time;
     }
   }
@@ -419,8 +416,8 @@ void turnThemOffOneAtATime() { //Go into party mode
   for (i = NUM_LEDS - 2; i >= 0; i--) { // leave the top halogen level ON
     delay(300);
     digitalWrite(ledPins[i], LOW); // turn them off one at a time
-    if (DEBUG) Serial.print(i);
-    if (DEBUG) Serial.println(" OFF");
+//    Serial.print(i);
+//    Serial.println(" OFF");
     delay(50);
   }
 }
@@ -429,13 +426,13 @@ void doSafety() {
   if (volts > MAX_VOLTS){
     digitalWrite(RELAYPIN, HIGH);
     relayState = STATE_ON;
-    if (DEBUG) Serial.println("RELAY OPEN");
+//    Serial.println("RELAY OPEN");
   }
 
   if (relayState == STATE_ON && situation != FAILING && volts < RECOVERY_VOLTS){
     digitalWrite(RELAYPIN, LOW);
     relayState = STATE_OFF;
-    if (DEBUG) Serial.println("RELAY CLOSED");
+//    Serial.println("RELAY CLOSED");
   }
 
   if (volts > DANGER_VOLTS){
@@ -447,7 +444,7 @@ void doSafety() {
   if (situation == FAILING && relayState!=STATE_ON && (time - timefailurestarted) > 10000 ) { //       Open the Relay so volts can drop;
     digitalWrite(RELAYPIN, HIGH);
     relayState = STATE_ON;
-    if (DEBUG) Serial.println("FAILING 10seconds: RELAY OPEN");
+//    Serial.println("FAILING 10seconds: RELAY OPEN");
   }
 
   if (volts > FAILVOLTAGE) { //TUNE
@@ -459,7 +456,7 @@ void doSafety() {
     timeSinceVoltageBeganFalling = 0;
     digitalWrite(RELAYPIN, LOW);
     relayState = STATE_OFF;
-    if (DEBUG) Serial.println("EMPTYTIME, got to IDLING 1: RELAY CLOSED");
+//    Serial.println("EMPTYTIME, got to IDLING 1: RELAY CLOSED");
   }
 }
 
@@ -498,35 +495,39 @@ void calcWattHours(){
   // In the main loop, calcWattHours is being told to run every second.
 }
 
-void printDisplay(){
-  if (DEBUG) Serial.print(realVolts);
-  if (DEBUG) Serial.print("v ");
-  if (DEBUG) Serial.print(volts);
-  if (DEBUG) Serial.print("fv ");
-  if (DEBUG) Serial.print(knobAdc);
-  if (DEBUG) Serial.print("knobAdc (");
-  if (DEBUG) Serial.print(1023 - analogRead(KNOBPIN));
-  if (DEBUG) Serial.print(") ");
-  if (DEBUG) Serial.print(presentLevel);
-  if (DEBUG) Serial.print("presentLevel ");
-  if (DEBUG) Serial.print(easyadder);
-  if (DEBUG) Serial.print("easyadder ");
-  if (DEBUG) Serial.print(voltshelperfactor);
-  if (DEBUG) Serial.print("voltshelperfactor ");
-
-
-  if (DEBUG && voltishFactor > 1.0) Serial.print(voltish);
-  if (DEBUG && voltishFactor > 1.0) Serial.print("voltish ");
-  // if (DEBUG) Serial.print(analogRead(VOLTPIN));
-  if (DEBUG) Serial.print("   Situation: ");
-  if (DEBUG) Serial.print(situation);
-  if (DEBUG) Serial.print("  time - topLevelTime: ");
-  if (DEBUG) Serial.print(time - topLevelTime);
-  if (DEBUG) Serial.print("  Voltage has been flat or falling for ");
-  if (DEBUG) Serial.print(timeSinceVoltageBeganFalling);
-  if (DEBUG) Serial.print(" S. & v2Secsago = ");
-  if (DEBUG) Serial.println(volts2SecondsAgo);
-}
+//void printDisplay(){
+//  Serial.print(realVolts);
+//  Serial.print("v ");
+//  Serial.print(volts);
+//  Serial.print("fv ");
+//  Serial.print(knobAdc);
+//  Serial.print("knobAdc (");
+//  Serial.print(1023 - analogRead(KNOBPIN));
+//  Serial.print(") ");
+//  Serial.print(presentLevel);
+//  Serial.print("presentLevel ");
+//  Serial.print(easyadder);
+//  Serial.print("easyadder ");
+//  Serial.print(voltshelperfactor);
+//  Serial.print("voltshelperfactor ");
+//
+//
+//  if (voltishFactor > 1.0) Serial.print(voltish);
+//  if (voltishFactor > 1.0) Serial.print("voltish ");
+//  // Serial.print(analogRead(VOLTPIN));
+//  Serial.print("   Situation: ");
+//  Serial.print(situation);
+//  Serial.print("  time - topLevelTime: ");
+//  Serial.print(time - topLevelTime);
+//  Serial.print("  Voltage has been flat or falling for ");
+//  Serial.print(timeSinceVoltageBeganFalling);
+//  Serial.print(" S. & v2Secsago = ");
+//  Serial.print(volts2SecondsAgo);
+//  Serial.print(" amps= ");
+//  Serial.print(amps);
+//  Serial.print(" watts= ");
+//  Serial.println(watts);
+//}
 
 void updatePowerStrip(float powerValue){
   float ledstolight;
