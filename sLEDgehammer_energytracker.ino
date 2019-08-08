@@ -8,7 +8,7 @@ char versionStr[] = "2 Bike sLEDgehammer 5Panels branch:energytracker";
 #define VOLTPIN A0 // Voltage Sensor Pin
 #define AMPSPIN A3 // Current Sensor Pin
 #define AMPCOEFF 13.05//9.82  // PLUSOUT = OUTPUT, PLUSRAIL = PEDAL INPUT
-#define AMPOFFSET 118.0 // when current sensor is at 0 amps this is the ADC value
+#define AMPOFFSET 123.0 // when current sensor is at 0 amps this is the ADC value
 #define NUM_LEDS 6 // Number of LED outputs.
 const int ledPins[NUM_LEDS] = { 3, 4, 5, 6, 7, 8};
 
@@ -103,14 +103,14 @@ float amps = 0;
 float volts2SecondsAgo = 0;
 
 float watts = 0;
-float wattHours = 0;
+unsigned long wattSeconds = 0;
 float voltsBefore = 0;
 unsigned long time = 0;
 unsigned long timeFastBlink = 0;
 unsigned long timeBlink = 0;
 unsigned long printTime = 0;
 unsigned long updateDisplayTime = 0;
-unsigned long wattHourTimer = 0;
+unsigned long wattSecondTimer = 0;
 unsigned long victoryTime = 0; // how long it's been since we declared victory
 unsigned long topLevelTime = 0; // how long we've been at top voltage level
 unsigned long timefailurestarted = 0;
@@ -132,9 +132,9 @@ int timeSinceVoltageBeganFalling = 0;
 int i = 0;
 
 void setup() {
-//  Serial.begin(BAUD_RATE);
+  Serial.begin(BAUD_RATE);
 
-//  Serial.println(versionStr);
+  Serial.println(versionStr);
 
   pinMode(RELAYPIN, OUTPUT);
   pinMode(VICTORY_RELAY_PIN, OUTPUT);
@@ -162,8 +162,12 @@ void loop() {
   getAmps();
   calcWatts();
   doSafety();
-  updateDisplay((millis()/1)%100000);
-  updatePowerStrip((millis()*10)%50000);//watts); // for testing powerStrip TODO: take out
+  if (time - wattSecondTimer > 1000) {
+    calcWattSeconds();
+    wattSecondTimer = time;
+  }
+  updateDisplay(wattSeconds);//(millis()/1)%100000);
+  updatePowerStrip(watts);//(millis()*1)%5000);
   realVolts = volts; // save realVolts for printDisplay function
   fakeVoltage(); // adjust 'volts' according to knob
   clearlyWinning(); // check to see if we're clearly losing and update 'voltish'
@@ -249,7 +253,7 @@ void loop() {
   digitalWrite(VICTORY_RELAY_PIN,situation == VICTORY); // if VICTORY activate external relay
 
   if(time - printTime > DISPLAY_INTERVAL){
-    //printDisplay();
+    printDisplay();
     printTime = time;
   }
 }
@@ -482,6 +486,9 @@ float adc2volts(float adc){
 }
 
 float adc2amps(float adc){
+  if (adc < AMPOFFSET) {
+    return 0;
+  }
   return (adc - AMPOFFSET) / AMPCOEFF;
 }
 
@@ -489,13 +496,13 @@ void calcWatts(){
   watts = volts * amps;
 }
 
-void calcWattHours(){
-  wattHours += (watts * ((time - wattHourTimer) / 1000.0) / 3600.0); // measure actual watt-hours
-  //wattHours +=  watts *     actual timeslice / in seconds / seconds per hour
-  // In the main loop, calcWattHours is being told to run every second.
+void calcWattSeconds(){
+  wattSeconds += (watts * (time - wattSecondTimer) / 1000); // measure actual watt-seconds
+  //wattSeconds +=  watts *     actual timeslice / in seconds
+  // In the main loop, calcWattSeconds is being told to run every second.
 }
 
-//void printDisplay(){
+void printDisplay(){
 //  Serial.print(realVolts);
 //  Serial.print("v ");
 //  Serial.print(volts);
@@ -523,11 +530,9 @@ void calcWattHours(){
 //  Serial.print(timeSinceVoltageBeganFalling);
 //  Serial.print(" S. & v2Secsago = ");
 //  Serial.print(volts2SecondsAgo);
-//  Serial.print(" amps= ");
-//  Serial.print(amps);
-//  Serial.print(" watts= ");
-//  Serial.println(watts);
-//}
+  Serial.print("amps="+String(amps)+" ("+String(analogRead(AMPSPIN)));
+  Serial.println(") watts="+String(watts)+" watthrs="+String(wattSeconds/3600));
+}
 
 void updatePowerStrip(float powerValue){
   float ledstolight;
