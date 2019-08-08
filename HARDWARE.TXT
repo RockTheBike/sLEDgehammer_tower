@@ -1,4 +1,30 @@
+start with a single sLEDgehammer wired as normal
+
+modifications to a standard single sLEDgehammer:
+
+C9 - install a 100μF capacitor here (observe polarity)
+R6 - install a 36.5KΩ resistor here (stands vertically unlike other resistors)
+IC2 - installl a current sensor here
+cut wire junction across D4 (joining VCC and VDD nodes)
+white wire from difficulty knob should NOT go to VDD.  VCC is correct,
+or it can go to the + hole of the ROI+GG row of six holes
+
+note: the following two parts share the nearby GND hole
+big 3 watt 2.7Ω resistor from VCC to VDD
+2200μF 10V capacitor from VCC to ground (observe polarity)
+
+make sure the pedal-power inputs (2X 4-pole MEGA neutrik jacks) go through
+relays to the PLUSOUT terminal on the board
+
+the ultracapaitor bank plus, and the plus to the sLEDgehammer 8-pole connector,
+and the plus wire to the buck converter (which makes 5V for the LED displays),
+which connects to the PLUSRAIL terminal on the board
+
+RESET_ENERGY_PIN        A5 // a button shorts this to ground to clear energy count
+POWER_STRIP_PIN 11 // blue data wire for addressible LEDs on Power Tower (54 pixels long)
+DISPLAY0_PIN    12 // green data wire for five-digit number display (8 * 45 pixels, see code)
+
 wiring to round connectors for "power tower" and 5-digit sign (addressible LEDs):
-pins 1,2: WHITE wire, +5V
+pins 1,2: WHITE wire, +5V (from a separate 5V buck coverter for higher current)
 pin 3: GREEN wire, addressible LED data
 pins 4,5: BLACK wire, ground
