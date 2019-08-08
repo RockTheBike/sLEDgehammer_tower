@@ -165,8 +165,8 @@ void loop() {
   if (time - wattSecondTimer > 1000) {
     calcWattSeconds();
     wattSecondTimer = time;
-  }
-  updateDisplay(wattSeconds);//(millis()/1)%100000);
+  }          // wattSeconds/3600 = watt-hours (display shows ##.###)
+  updateDisplay(wattSeconds/3600);//(millis()/1)%100000);
   updatePowerStrip(watts);//(millis()*1)%5000);
   realVolts = volts; // save realVolts for printDisplay function
   fakeVoltage(); // adjust 'volts' according to knob
