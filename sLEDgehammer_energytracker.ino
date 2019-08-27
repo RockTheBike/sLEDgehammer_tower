@@ -103,6 +103,7 @@ float amps = 0;
 float volts2SecondsAgo = 0;
 
 float watts = 0;
+float exagWatts = 0;
 unsigned long wattSeconds = 0;
 float voltsBefore = 0;
 unsigned long time = 0;
@@ -161,13 +162,14 @@ void loop() {
   getVolts();
   getAmps();
   calcWatts();
+  calcExagWatts();
   doSafety();
   if (time - wattSecondTimer > 1000) {
     calcWattSeconds();
     wattSecondTimer = time;
   }          // wattSeconds/3600 = watt-hours (display shows ##.###)
   updateDisplay(wattSeconds/3600);//(millis()/1)%100000);
-  updatePowerStrip(watts);//(millis()*1)%5000);
+  updatePowerStrip(exagWatts);//(millis()*1)%5000);
   realVolts = volts; // save realVolts for printDisplay function
   fakeVoltage(); // adjust 'volts' according to knob
   clearlyWinning(); // check to see if we're clearly losing and update 'voltish'
@@ -202,7 +204,7 @@ void loop() {
     situation = IDLING;
   }
 
-  volts2SecondsAgo =  voltRecord[(vRIndex + VRSIZE - 2) % VRSIZE]; // voltage LOSESECONDS ago
+  volts2SecondsAgo =  voltRecord[(vRIndex + VRSIZE - 2) % VRSIZE]; // voltage 2 seconds ago
 
   if (situation==IDLING){
     if (voltish - volts2SecondsAgo > 0.4) { // need to get past startup sequences/ TUNE
@@ -214,23 +216,23 @@ void loop() {
     }
   }
 
-   if (timeSinceVoltageBeganFalling > 15 && volts > FAILVOLTAGE && situation != FAILING) {
+   if (timeSinceVoltageBeganFalling > 120 && volts > FAILVOLTAGE && situation != FAILING) { ////NYPA change by Paul from 15 seconds to 120 to prevent relay opening. Possible repeat test. 
 //     Serial.println("Got to Failing. Voltage has been falling for 15 seconds. ");
-     situation=FAILING;
+     //situation=FAILING; Just commenting out failing.
    }
 
   if (situation != VICTORY && situation == PLAYING) { // if we're not in VICTORY mode...
     voltsBefore =  voltRecord[(vRIndex + VRSIZE - LOSESECONDS) % VRSIZE]; // voltage LOSESECONDS ago
-    if (timeSinceVoltageBeganFalling > 15) {  // Double test? See line 6 up.
+    if (timeSinceVoltageBeganFalling > 120) {  // Double test? See line 6 up. //NYPA change by Paul from 15 seconds to 120 to prevent relay opening. 
 //      Serial.println("Got to Failing. Voltage has been falling for 15 seconds. ");
-      situation=FAILING;
-    } else if ((voltsBefore - voltish) > 3) { // if voltage has fallen but they haven't given up TUNE seems harsh. 3V?
+      // situation=FAILING; If it falls it falls. No need to reset! No failing! 
+    } /*else if ((voltsBefore - voltish) > 3) { // if voltage has fallen but they haven't given up TUNE seems harsh. 3V?
 //      Serial.print("voltsBefore: ");
 //      Serial.println(voltsBefore);
       situation = FAILING; // forget it, you lose
 //      Serial.println("got to FAILING 2");
       timefailurestarted = time;
-    }
+    }*/  // NYPA change.  Commenting out this test. Trying to reduce FAILING situations. Don't know if this test is good anyway. Paul
   }
 
   if (presentLevel < 5) { // voltish < ledLevels[NUM_LEDS-1]){
@@ -367,16 +369,16 @@ void doLeds() {
       }
     }
   } else if (situation == VICTORY) { // assuming victory is not over
-    if (time - victoryTime <= 3000) {
+    if (time - victoryTime <= 4000) {
       for (i = 0; i < NUM_LEDS - 1; i++) {
         ledState[i]=STATE_OFF; // turn them all off but the top one, which helps keep it from suddenly feeling easy.
       }
-      ledState[((time - victoryTime) % 1000) / 200]=STATE_ON; // turn on one at a time, bottom to top, 0.1 seconds each
+      ledState[((time - victoryTime) % 1000) / 250]=STATE_ON; // turn on one at a time, bottom to top, 0.1 seconds each
     } else { // 1st victory sequence is over
       turnThemOffOneAtATime();
-      situation=FAILING;
+      situation=PLAYING; //NYPA reducing switches to failing. Changed to PLAYING after victory . 
 //      Serial.println("I switched to FAILING 1");
-      timefailurestarted = time;
+     // timefailurestarted = time; //NYPA reducing switches to failing
     }
   }
 
@@ -416,7 +418,8 @@ void doLeds() {
 
 void turnThemOffOneAtATime() { //Go into party mode
   for (i = 0; i < NUM_LEDS; i++) digitalWrite(ledPins[i], HIGH); // turn on all levels
-  delay(500);
+  delay(2
+  000);
   for (i = NUM_LEDS - 2; i >= 0; i--) { // leave the top halogen level ON
     delay(300);
     digitalWrite(ledPins[i], LOW); // turn them off one at a time
@@ -494,6 +497,22 @@ float adc2amps(float adc){
 
 void calcWatts(){
   watts = volts * amps;
+}
+
+void calcExagWatts(){
+  if (watts < 60) {
+    exagWatts = watts / 2;
+  } else if (watts >= 60 && watts < 100){
+    exagWatts = watts;
+  } else if (watts >=100 && watts < 160){
+    exagWatts = watts * 1.5;
+  } else if (watts >=160 && watts < 200){
+    exagWatts = watts * 2.2;
+      } else if (watts >=200 && watts < 260){
+    exagWatts = watts * 3.5;
+  } else if (watts >=260) {
+    exagWatts = watts * 4.5 ;
+  }
 }
 
 void calcWattSeconds(){
