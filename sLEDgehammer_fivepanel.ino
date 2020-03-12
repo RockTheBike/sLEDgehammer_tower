@@ -13,6 +13,16 @@ const int ledPins[NUM_LEDS] = { 3, 4, 5, 6, 7, 8};
 // levels at which each LED turns on (not including special states)
 const float ledLevels[NUM_LEDS+1] = { 20, 22, 23, 24, 25, 25.4, 0 }; // last value unused in sledge
 
+#define DISPLAY0_PIN            12 // green data wire for five-digit number display
+#define DISPLAY_PIXELS 280
+#include <Adafruit_NeoPixel.h>
+// bottom right is first pixel, goes up 8, left 1, down 8, left 1...
+// https://www.aliexpress.com/item/8-32-Pixel/32225275406.html
+#include "font1.h"
+uint32_t fontColor = Adafruit_NeoPixel::Color(100,100,100);
+uint32_t backgroundColor = Adafruit_NeoPixel::Color(0,0,0);
+Adafruit_NeoPixel display0 = Adafruit_NeoPixel(DISPLAY_PIXELS, DISPLAY0_PIN, NEO_GRB + NEO_KHZ800);
+
 #define KNOBPIN A4
 int knobAdc = 0;
 void doKnob(){
@@ -97,6 +107,8 @@ unsigned long timeArbduinoTurnedOn = 0;
 unsigned long clearlyLosingTime = 0; // time when we last were NOT clearly losing
 unsigned long serialTime = 0; // time when last serial data was seen
 unsigned long drainedTime = 0; // time when volts was last OVER 13.5v
+unsigned long updateDisplayTime = 0; // last time display was updated
+#define UPDATEDISPLAYS_INTERVAL 750 // how many milliseconds between running updateDisplays
 #define EMPTYTIME 1000 // how long caps must be below 13.5v to be considered empty
 #define SERIALTIMEOUT 500 // if serial data is older than this, ignore it
 #define SERIALINTERVAL 300 // how much time between sending a serial packet
@@ -127,6 +139,9 @@ void setup() {
   timeDisplay = millis();
   timeArbduinoTurnedOn = timeDisplay;
   vRTime = timeDisplay; // initialize vRTime since it's a once-per-second thing
+  display0.begin();
+  //for (int j=0; j<DISPLAY_PIXELS; j++) {display0.setPixelColor(j,j);}
+  display0.show();
 }
 
 void loop() {
@@ -136,6 +151,7 @@ void loop() {
   realVolts = volts; // save realVolts for printDisplay function
   fakeVoltage(); // adjust 'volts' according to knob
   clearlyWinning(); // check to see if we're clearly losing and update 'voltish'
+  updateDisplay(millis() % 100000); // test display with incrementing number
   if (time - serialSent > SERIALINTERVAL) {
     sendSerial();  // tell other box our presentLevel
     serialSent = time; // reset the timer
@@ -494,4 +510,54 @@ void printDisplay(){
   if (DEBUG) Serial.print(timeSinceVoltageBeganFalling);
   if (DEBUG) Serial.print(" S. & v2Secsago = ");
   if (DEBUG) Serial.println(volts2SecondsAgo);
+}
+
+void updateDisplay(unsigned long displayValue) {
+  if (millis() - updateDisplayTime > UPDATEDISPLAYS_INTERVAL) {
+    char *buf="     "; // stores the number we're going to display
+    sprintf(buf,"%5d",displayValue);
+    //if (displayValue < 1000) buf[1]='0'; // because the decimal point is there
+    //if (displayValue < 100 ) buf[2]='0';
+    //if (displayValue < 10  ) buf[3]='0';
+    writeDisplay(display0, buf);
+    buf="    ";
+    updateDisplayTime = millis();
+  }
+}
+
+void writeDisplay(const Adafruit_NeoPixel& strip, char* text) {
+#define DISPLAY_CHARS   5 // number of characters in display
+#define FONT_W 7 // width of font
+#define FONT_H 8 // height of font
+  for (int textIndex=0; textIndex<DISPLAY_CHARS; textIndex++) {
+    char buffer[FONT_H][FONT_W]; // array of horizontal lines, top to bottom, left to right
+    for(int fontIndex=0; fontIndex<sizeof(charList); fontIndex++){ // charList is in font1.h
+      if(charList[fontIndex] == text[textIndex]){ // if fontIndex is the index of the desired letter
+        int pos = fontIndex*FONT_H; // index into CHL where the character starts
+        for(int row=0;row<FONT_H;row++){ // for each horizontal row of pixels
+          memcpy_P(buffer[row], (PGM_P)pgm_read_word(&(CHL[pos+row])), FONT_W); // copy to buffer from flash
+        }
+      }
+    }
+    for (int fontXIndex=0; fontXIndex<FONT_W; fontXIndex++) {
+      for (int fontYIndex=0; fontYIndex<FONT_H; fontYIndex++) {
+        uint32_t pixelColor = buffer[fontYIndex][FONT_W-1-fontXIndex]=='0' ? fontColor : backgroundColor; // here is where the magic happens
+        if ((FONT_W*(DISPLAY_CHARS-1-textIndex) + fontXIndex) & 1) { // odd columns are top-to-bottom
+          strip.setPixelColor((FONT_H*FONT_W)*(DISPLAY_CHARS-1-textIndex) + fontXIndex*FONT_H +           fontYIndex ,pixelColor);
+        } else { // even columns are bottom-to-top
+          strip.setPixelColor((FONT_H*FONT_W)*(DISPLAY_CHARS-1-textIndex) + fontXIndex*FONT_H + (FONT_H-1-fontYIndex),pixelColor);
+        }
+      }
+    }
+  }   // number of digits V after decimal     V---this should be 077 for odd numbers of digits after the decimal, 700 for even
+  /*if (wattSeconds/3600 > 99999) { // move the decimal point to ###.##
+    strip.setPixelColor(((2*FONT_W)-1)*FONT_H+7,fontColor);//strip.Color(255,0,0)); // light up the decimal point
+    strip.setPixelColor(((2*FONT_W)  )*FONT_H+0,backgroundColor);//strip.Color(0,0,255)); // keep decimal point visible
+    strip.setPixelColor(((2*FONT_W)-2)*FONT_H+0,backgroundColor);//strip.Color(0,255,0)); // keep decimal point visible
+  } else { // the decimal point at ##.###
+    strip.setPixelColor(((3*FONT_W)-1)*FONT_H+0,fontColor);//strip.Color(255,0,0)); // light up the decimal point
+    strip.setPixelColor(((3*FONT_W)  )*FONT_H+7,backgroundColor);//strip.Color(0,0,255)); // keep decimal point visible
+    strip.setPixelColor(((3*FONT_W)-2)*FONT_H+7,backgroundColor);//strip.Color(0,255,0)); // keep decimal point visible
+  }*/
+  strip.show(); // send the update out to the LEDs
 }
