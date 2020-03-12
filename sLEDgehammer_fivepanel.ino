@@ -7,6 +7,8 @@ char versionStr[] = "2 Bike sLEDgehammer Panels ver. 2.7 branch:fivepanel";
 #define RELAYPIN 2 // relay cutoff output pin // NEVER USE 13 FOR A RELAY
 #define VOLTPIN A0 // Voltage Sensor Pin
 #define AMPSPIN A3 // Current Sensor Pin
+#define AMPCOEFF 13.05//9.82  // PLUSOUT = OUTPUT, PLUSRAIL = PEDAL INPUT
+#define AMPOFFSET 123.0 // when current sensor is at 0 amps this is the ADC value
 #define NUM_LEDS 6 // Number of LED outputs.
 const int ledPins[NUM_LEDS] = { 3, 4, 5, 6, 7, 8};
 
@@ -147,11 +149,13 @@ void setup() {
 void loop() {
   time = millis();
   getVolts();
+  getAmps();
+  calcWatts();
   doSafety();
   realVolts = volts; // save realVolts for printDisplay function
   fakeVoltage(); // adjust 'volts' according to knob
   clearlyWinning(); // check to see if we're clearly losing and update 'voltish'
-  updateDisplay(millis() % 100000); // test display with incrementing number
+  updateDisplay(watts);
   if (time - serialSent > SERIALINTERVAL) {
     sendSerial();  // tell other box our presentLevel
     serialSent = time; // reset the timer
@@ -469,7 +473,10 @@ float adc2volts(float adc){
 }
 
 float adc2amps(float adc){
-  return (adc - 512) * 0.1220703125;
+  if (adc < AMPOFFSET) {
+    return 0;
+  }
+  return (adc - AMPOFFSET) / AMPCOEFF;
 }
 
 void calcWatts(){
